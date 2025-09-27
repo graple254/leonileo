@@ -1,6 +1,18 @@
-# urls.py
 from django.urls import path
-from . import views
+from .views import *
 
 urlpatterns = [
+    # Authentication
+    path("signup/", signup_view, name="signup"),
+    path("login/", login_view, name="login"),
+    path("logout/", logout_view, name="logout"),
+
+    # Customer
+    path("", index, name="index"),
+
+    # Merchant
+    path("merchant/dashboard/", merchant_dashboard, name="merchant_dashboard"),
+
+    # Moderator
+    path("moderator/dashboard/", moderator_dashboard, name="moderator_dashboard"),
 ]
