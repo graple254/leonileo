@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
+from .models import *
 
 from .decorators import role_required
 
@@ -87,13 +88,46 @@ def index(request):
 
 
 # MERCHANT VIEWS ###################################################################################################
+
 @login_required
 @role_required("MERCHANT")
 def merchant_dashboard(request):
-    """
-    Merchant dashboard restricted to MERCHANT users only.
-    """
-    return render(request, "files/merchant/dashboard.html")
+    """Merchant dashboard. Redirect to profile creation if missing."""
+    try:
+        profile = request.user.merchant_profile
+    except MerchantProfile.DoesNotExist:
+        return redirect("create_merchant_profile")
+
+    return render(request, "files/merchant/dashboard.html", {"profile": profile})
+
+
+@login_required
+@role_required("MERCHANT")
+def create_merchant_profile(request):
+    """Create merchant profile if it doesn't exist."""
+    if hasattr(request.user, "merchant_profile"):
+        messages.info(request, "You already have a profile.")
+        return redirect("merchant_dashboard")
+
+    if request.method == "POST":
+        business_name = request.POST.get("business_name")
+        location = request.POST.get("location")
+        whatsapp_number = request.POST.get("whatsapp_number")
+
+        if not business_name or not location or not whatsapp_number:
+            messages.error(request, "All fields are required.")
+            return redirect("create_merchant_profile")
+
+        MerchantProfile.objects.create(
+            user=request.user,
+            business_name=business_name,
+            location=location,
+            whatsapp_number=whatsapp_number
+        )
+        messages.success(request, "Profile created successfully!")
+        return redirect("merchant_dashboard")
+
+    return render(request, "files/merchant/create_profile.html")
 
 
 # MODERATOR VIEWS ##################################################################################################
