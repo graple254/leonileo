@@ -12,6 +12,7 @@ urlpatterns = [
 
     # Merchant URLs
     path("merchant/dashboard/", merchant_dashboard, name="merchant_dashboard"),
+    path("merchant/products/", merchant_products, name="merchant_products"),
     path("merchant/create-profile/", create_merchant_profile, name="create_merchant_profile"),
 
     # Moderator

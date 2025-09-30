@@ -3,165 +3,354 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bazaa - Merchant Dashboard</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        .sidebar {
-            min-height: calc(100vh - 56px);
-        }
-    </style>
+    <title>Merchant Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{% url 'merchant_dashboard' %}">Bazaa Merchant</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'merchant_dashboard' %}">Dashboard</a>
-                    </li>
-                </ul>
-                <div class="navbar-nav">
-                    <span class="nav-item nav-link text-light">
-                        <i class="bi bi-shop"></i> Merchant: {{ user.username }}
-                    </span>
-                    <a class="nav-link" href="{% url 'logout' %}">
-                        <i class="bi bi-box-arrow-right"></i> Logout
-                    </a>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-6">
+        <!-- Sticky Header -->
+        <header class="bg-white shadow-lg rounded-lg p-6 mb-6 flex justify-between items-center sticky top-4 mx-2 z-50">
+            <h1 class="text-2xl font-bold text-gray-800">Merchant Dashboard</h1>
+            <div class="hidden md:flex items-center space-x-6">
+            <span class="text-xl font-semibold text-gray-700 italic">{{ merchant.business_name }}</span>
+            <a href="{% url 'merchant_products' %}" class="text-blue-600 hover:text-blue-800 font-medium">Manage Products</a>
+            <a href="{% url 'logout' %}" class="text-blue-600 hover:text-blue-800 font-medium">Logout</a>
+            </div>
+        </header>
+
+        <!-- Mobile Bottom Navigation -->
+        <div class="md:hidden fixed bottom-4 left-4 right-4 z-50">
+            <nav class="bg-white shadow-lg rounded-lg p-4">
+            <div class="flex justify-around items-center">
+                <a href="{% url 'merchant_dashboard' %}" class="flex flex-col items-center text-blue-600">
+                <i class="fas fa-home text-xl"></i>
+                <span class="text-sm">Dashboard</span>
+                </a>
+                <a href="{% url 'merchant_products' %}" class="flex flex-col items-center text-blue-600">
+                <i class="fas fa-box text-xl"></i>
+                <span class="text-sm">Products</span>
+                </a>
+                <a href="{% url 'logout' %}" class="flex flex-col items-center text-blue-600">
+                <i class="fas fa-sign-out-alt text-xl"></i>
+                <span class="text-sm">Logout</span>
+                </a>
+            </div>
+            </nav>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            <div class="mb-6">
+                {% for message in messages %}
+                    <div class="p-4 rounded-md {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'info' %}bg-blue-100 text-blue-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Dashboard Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Profile Editing Card -->
+            <!-- Profile Card -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <div class="flex items-center mb-6">
+                    <i class="fas fa-user-circle text-2xl text-blue-600 mr-3"></i>
+                    <h2 class="text-xl font-semibold text-gray-800">Business Profile</h2>
+                </div>
+                <form method="POST" action="{% url 'merchant_dashboard' %}" class="space-y-6">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="edit_profile">
+                    <div class="space-y-2">
+                        <label for="business_name" class="block text-sm font-medium text-gray-700">Business Name</label>
+                        <input type="text" id="business_name" name="business_name" 
+                               value="{{ merchant.business_name }}" 
+                               class="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                               required>
+                    </div>
+                    <div class="space-y-2">
+                        <label for="location" class="block text-sm font-medium text-gray-700">Location</label>
+                        <input type="text" id="location" name="location" 
+                               value="{{ merchant.location }}" 
+                               class="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                               required>
+                    </div>
+                    <div class="space-y-2">
+                        <label for="whatsapp_number" class="block text-sm font-medium text-gray-700">WhatsApp Number</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+                                <i class="fab fa-whatsapp"></i>
+                            </span>
+                            <input type="text" id="whatsapp_number" name="whatsapp_number" 
+                                   value="{{ merchant.whatsapp_number }}" 
+                                   class="mt-1 block w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                   required>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-200 flex items-center justify-center">
+                        <i class="fas fa-save mr-2"></i>
+                        Update Profile
+                    </button>
+                </form>
+            </div>
+            <!-- Analytics Card -->
+            <div class="bg-white shadow rounded-lg p-6 md:col-span-2">
+                <div class="flex items-center mb-6">
+                    <i class="fas fa-chart-line text-2xl text-blue-600 mr-3"></i>
+                    <h2 class="text-xl font-semibold text-gray-800">Analytics Overview</h2>
+                </div>
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
+                        <div class="flex flex-col items-center justify-center h-full">
+                            <i class="fas fa-box text-blue-600 text-2xl mb-3"></i>
+                            <h3 class="text-sm font-medium text-gray-700 text-center">Total Products</h3>
+                            <p class="text-3xl font-bold text-blue-600 mt-2">{{ products_count }}</p>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
+                        <div class="flex flex-col items-center justify-center h-full">
+                            <i class="fas fa-clock text-green-600 text-2xl mb-3"></i>
+                            <h3 class="text-sm font-medium text-gray-700 text-center">Total Listings</h3>
+                            <p class="text-3xl font-bold text-green-600 mt-2">{{ slots_count }}</p>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
+                        <div class="flex flex-col items-center justify-center h-full">
+                            <i class="fas fa-check-circle text-yellow-600 text-2xl mb-3"></i>
+                            <h3 class="text-sm font-medium text-gray-700 text-center">Approved Listings</h3>
+                            <p class="text-3xl font-bold text-yellow-600 mt-2">{{ approved_count }}</p>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
+                        <div class="flex flex-col items-center justify-center h-full">
+                            <i class="fas fa-times-circle text-red-600 text-2xl mb-3"></i>
+                            <h3 class="text-sm font-medium text-gray-700 text-center">Rejected Listings</h3>
+                            <p class="text-3xl font-bold text-red-600 mt-2">{{ rejected_count }}</p>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
+                        <div class="flex flex-col items-center justify-center h-full">
+                            <i class="fas fa-hourglass-half text-purple-600 text-2xl mb-3"></i>
+                            <h3 class="text-sm font-medium text-gray-700 text-center">Pending Listings</h3>
+                            <p class="text-3xl font-bold text-purple-600 mt-2">{{ pending_count }}</p>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
+                        <div class="flex flex-col items-center justify-center h-full">
+                            <i class="fas fa-trash-alt text-indigo-600 text-2xl mb-3"></i>
+                            <h3 class="text-sm font-medium text-gray-700 text-center">Removed Listings</h3>
+                            <p class="text-3xl font-bold text-indigo-600 mt-2">{{ removed_count }}</p>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </nav>
 
-    <!-- Messages -->
-    {% if messages %}
-        <div class="container-fluid mt-3">
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
+            <!-- Latest Products Card -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Latest Products</h2>
+                <div class="overflow-y-auto max-h-96">
+                    <div class="grid grid-cols-1 gap-4">
+                        {% for product in latest_products %}
+                            <div class="product-card p-4 border rounded-lg hover:shadow-lg cursor-pointer" 
+                                 onclick="openModal('modal-{{product.id}}')">
+                                {% with first_image=product.images.first %}
+                                    {% if first_image %}
+                                        <img src="{{ first_image.image.url }}" 
+                                             alt="{{ product.name }}" 
+                                             class="w-full h-48 object-cover rounded-lg">
+                                    {% else %}
+                                        <div class="w-full h-48 bg-gray-200 flex items-center justify-center rounded-lg">
+                                            <span class="text-gray-500">No image available</span>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                                <h3 class="mt-2 text-lg font-semibold">{{ product.name }}</h3>
+                                <p class="text-gray-600">Created: {{ product.created_at|date:"Y-m-d" }}</p>
+                            </div>
 
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
-                <div class="position-sticky pt-3">
-                    <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="#">
-                                <i class="bi bi-house-door"></i>
-                                Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="bi bi-box"></i>
-                                Products
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="bi bi-cart"></i>
-                                Orders
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="bi bi-graph-up"></i>
-                                Analytics
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="bi bi-gear"></i>
-                                Settings
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
-
-            <!-- Main Content -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Merchant Dashboard</h1>
-                </div>
-
-                <!-- Stats Overview -->
-                <div class="row g-4 mb-4">
-                    <div class="col-md-3">
-                        <div class="card text-white bg-primary">
-                            <div class="card-body">
-                                <h5 class="card-title">Total Products</h5>
-                                <p class="card-text display-6">0</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-white bg-success">
-                            <div class="card-body">
-                                <h5 class="card-title">Total Orders</h5>
-                                <p class="card-text display-6">0</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-white bg-info">
-                            <div class="card-body">
-                                <h5 class="card-title">Total Revenue</h5>
-                                <p class="card-text display-6">$0</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-white bg-warning">
-                            <div class="card-body">
-                                <h5 class="card-title">Pending Orders</h5>
-                                <p class="card-text display-6">0</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Quick Actions -->
-                <div class="row mb-4">
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-header">
-                                Quick Actions
-                            </div>
-                            <div class="card-body">
-                                <div class="d-grid gap-2 d-md-flex">
-                                    <button class="btn btn-primary">
-                                        <i class="bi bi-plus-circle"></i> Add Product
-                                    </button>
-                                    <button class="btn btn-secondary">
-                                        <i class="bi bi-list-check"></i> View Orders
-                                    </button>
-                                    <button class="btn btn-info">
-                                        <i class="bi bi-graph-up"></i> View Analytics
-                                    </button>
+                            <!-- Modal for {{product.name}} -->
+                            <div id="modal-{{product.id}}" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+                                <div class="flex items-center justify-center min-h-screen p-4">
+                                    <div class="bg-white rounded-lg max-w-2xl w-full">
+                                        <div class="p-6">
+                                            <div class="flex justify-between items-center mb-4">
+                                                <h2 class="text-2xl font-bold">{{ product.name }}</h2>
+                                                <button onclick="closeModal('modal-{{product.id}}')" 
+                                                        class="text-gray-500 hover:text-gray-700">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div class="space-y-4">
+                                                    {% if product.images.all %}
+                                                        <div class="overflow-x-auto whitespace-nowrap">
+                                                            {% for image in product.images.all %}
+                                                                <img src="{{ image.image.url }}" 
+                                                                     alt="{{ product.name }}" 
+                                                                     class="inline-block w-48 h-48 object-cover rounded-lg mr-2">
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="space-y-4">
+                                                    <p class="text-gray-600">{{ product.description }}</p>
+                                                    <div class="space-y-2">
+                                                        <p class="font-semibold">Original Price: 
+                                                            <span class="text-gray-600">${{ product.original_price }}</span>
+                                                        </p>
+                                                        {% if product.discounted_price %}
+                                                            <p class="font-semibold">Discounted Price: 
+                                                                <span class="text-green-600">${{ product.discounted_price }}</span>
+                                                            </p>
+                                                            <p class="font-semibold">Discount: 
+                                                                <span class="text-red-600">{{ product.percentage_discount }}%</span>
+                                                            </p>
+                                                        {% endif %}
+                                                        <p class="font-semibold">Stock: 
+                                                            <span class="text-gray-600">{{ product.stock_quantity }}</span>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        {% empty %}
+                            <p class="text-gray-600">No products available.</p>
+                        {% endfor %}
                     </div>
                 </div>
-            </main>
+            </div>
+
+            <script>
+                function openModal(modalId) {
+                    document.getElementById(modalId).classList.remove('hidden');
+                }
+
+                function closeModal(modalId) {
+                    document.getElementById(modalId).classList.add('hidden');
+                }
+            </script>
+            <!-- Activity Logs Card -->
+            <div class="bg-white shadow rounded-lg p-6 md:col-span-2">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Activity Logs</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comment</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for log in logs_page %}
+                                <tr onclick="openLogModal('log-modal-{{log.id}}')" class="hover:bg-gray-50 cursor-pointer">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.timestamp|date:"Y-m-d H:i" }} - {{ log.product_timeslot.timeslot.name }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.action }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.comment }}</td>
+                                </tr>
+
+                                <!-- Detailed Modal for Log Entry -->
+                                <div id="log-modal-{{log.id}}" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+                                    <div class="flex items-center justify-center min-h-screen p-4">
+                                        <div class="bg-white rounded-lg max-w-4xl w-full">
+                                            <div class="p-6">
+                                                <div class="flex justify-between items-center mb-4">
+                                                    <h2 class="text-2xl font-bold">Activity Log Details</h2>
+                                                    <button onclick="closeLogModal('log-modal-{{log.id}}')" 
+                                                            class="text-gray-500 hover:text-gray-700">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <!-- Log Details -->
+                                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                                        <h3 class="text-lg font-semibold mb-3">Audit Information</h3>
+                                                        <div class="space-y-2">
+                                                            <p><span class="font-medium">Timestamp:</span> {{ log.timestamp|date:"Y-m-d H:i:s" }}</p>
+                                                            <p><span class="font-medium">Action:</span> <span class="px-2 py-1 rounded {% if log.action == 'approve' %}bg-green-100 text-green-800{% elif log.action == 'reject' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">{{ log.action }}</span></p>
+                                                            <p><span class="font-medium">Moderator:</span> {{ log.moderator.username }}</p>
+                                                            <p><span class="font-medium">Comment:</span> {{ log.comment }}</p>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Product Details -->
+                                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                                        <h3 class="text-lg font-semibold mb-3">Product Information</h3>
+                                                        <div class="space-y-2">
+                                                            <p><span class="font-medium">Product:</span> {{ log.product_timeslot.product.name }}</p>
+                                                            <p><span class="font-medium">Original Price:</span> ${{ log.product_timeslot.product.original_price }}</p>
+                                                            <p><span class="font-medium">Discounted Price:</span> ${{ log.product_timeslot.product.discounted_price }}</p>
+                                                            <p><span class="font-medium">Discount:</span> {{ log.product_timeslot.product.percentage_discount }}%</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- TimeSlot Details -->
+                                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                                        <h3 class="text-lg font-semibold mb-3">TimeSlot Information</h3>
+                                                        <div class="space-y-2">
+                                                            <p><span class="font-medium">Name:</span> {{ log.product_timeslot.timeslot.name }}</p>
+                                                            <p><span class="font-medium">Start Time:</span> {{ log.product_timeslot.timeslot.start_time|date:"Y-m-d H:i" }}</p>
+                                                            <p><span class="font-medium">End Time:</span> {{ log.product_timeslot.timeslot.end_time|date:"Y-m-d H:i" }}</p>
+                                                            <p><span class="font-medium">Status:</span> {{ log.product_timeslot.timeslot.status }}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Product Images -->
+                                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                                        <h3 class="text-lg font-semibold mb-3">Product Images</h3>
+                                                        <div class="flex space-x-2 overflow-x-auto">
+                                                            {% for image in log.product_timeslot.product.images.all %}
+                                                                <img src="{{ image.image.url }}" 
+                                                                     alt="Product image" 
+                                                                     class="h-32 w-32 object-cover rounded-lg">
+                                                            {% empty %}
+                                                                <p class="text-gray-500">No images available</p>
+                                                            {% endfor %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="3" class="px-6 py-4 text-sm text-gray-500 text-center">No activity logs available.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Pagination -->
+                <div class="mt-4 flex justify-between items-center">
+                    {% if logs_page.has_previous %}
+                        <a href="?page={{ logs_page.previous_page_number }}" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300">Previous</a>
+                    {% else %}
+                        <button class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md opacity-50 cursor-not-allowed" disabled>Previous</button>
+                    {% endif %}
+                    <span class="text-gray-600">Page {{ logs_page.number }} of {{ logs_page.paginator.num_pages }}</span>
+                    {% if logs_page.has_next %}
+                        <a href="?page={{ logs_page.next_page_number }}" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300">Next</a>
+                    {% else %}
+                        <button class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md opacity-50 cursor-not-allowed" disabled>Next</button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <script>
+                function openLogModal(modalId) {
+                    document.getElementById(modalId).classList.remove('hidden');
+                }
+
+                function closeLogModal(modalId) {
+                    document.getElementById(modalId).classList.add('hidden');
+                }
+            </script>
         </div>
     </div>
-
-    <!-- Bootstrap JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

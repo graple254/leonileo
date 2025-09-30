@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merchant Products</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-6">
+        <!-- Header -->
+        <!-- Sticky Header -->
+        <header class="bg-white shadow-lg rounded-lg p-6 mb-6 flex justify-between items-center sticky top-4 mx-2 z-50">
+            <h1 class="text-2xl font-bold text-gray-800">Manage Products & Listings</h1>
+            <div class="hidden md:flex items-center space-x-6">
+            <span class="text-xl font-semibold text-gray-700 italic">{{ merchant.business_name }}</span>
+            <a href="{% url 'merchant_dashboard' %}" class="text-blue-600 hover:text-blue-800 font-medium">Dashboard</a>
+            <a href="{% url 'logout' %}" class="text-blue-600 hover:text-blue-800 font-medium">Logout</a>
+            </div>
+        </header>
+
+        <!-- Mobile Bottom Navigation -->
+        <div class="md:hidden fixed bottom-4 left-4 right-4 z-50">
+            <nav class="bg-white shadow-lg rounded-lg p-4">
+            <div class="flex justify-around items-center">
+                <a href="{% url 'merchant_dashboard' %}" class="flex flex-col items-center text-blue-600">
+                <i class="fas fa-home text-xl"></i>
+                <span class="text-sm">Dashboard</span>
+                </a>
+                <a href="{% url 'merchant_products' %}" class="flex flex-col items-center text-blue-600">
+                <i class="fas fa-box text-xl"></i>
+                <span class="text-sm">Products</span>
+                </a>
+                <a href="{% url 'logout' %}" class="flex flex-col items-center text-blue-600">
+                <i class="fas fa-sign-out-alt text-xl"></i>
+                <span class="text-sm">Logout</span>
+                </a>
+            </div>
+            </nav>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            <div class="mb-6">
+                {% for message in messages %}
+                    <div class="p-4 rounded-md {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'info' %}bg-blue-100 text-blue-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Dashboard Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Add Product Form -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Add New Product</h2>
+                <form method="POST" action="{% url 'merchant_products' %}" enctype="multipart/form-data" class="space-y-6">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_product">
+                    
+                    <!-- Enhanced Category Dropdown -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Category</label>
+                        <div class="relative">
+                            <select name="category" required
+                                class="block appearance-none w-full bg-white border border-gray-300 rounded-lg py-4 px-4 pr-8 text-lg
+                                       cursor-pointer hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 
+                                       focus:border-transparent transition-all">
+                                <option value="" disabled selected>Choose a category...</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}" class="py-2">
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Basic Information -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700">Product Name</label>
+                            <input type="text" id="name" name="name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-3 text-lg" required>
+                        </div>
+                        <div>
+                            <label for="stock_quantity" class="block text-sm font-medium text-gray-700">Stock Quantity</label>
+                            <input type="number" id="stock_quantity" name="stock_quantity" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-3 text-lg" required>
+                        </div>
+                    </div>
+
+                    <!-- Price Fields -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="original_price" class="block text-sm font-medium text-gray-700">Original Price (Kshs)</label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 text-lg">Kshs</span>
+                                </div>
+                                <input type="number" id="original_price" name="original_price" step="0.01" class="pl-16 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 py-3 text-lg" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="discounted_price" class="block text-sm font-medium text-gray-700">Discounted Price (Kshs)</label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 text-lg">Kshs</span>
+                                </div>
+                                <input type="number" id="discounted_price" name="discounted_price" step="0.01" class="pl-16 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 py-3 text-lg" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description with Resizable Textarea -->
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea id="description" name="description" rows="6" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-lg resize-y min-h-[150px]" required></textarea>
+                    </div>
+
+                    <!-- Image Upload -->
+                    <div class="space-y-4">
+                        <label class="block text-sm font-medium text-gray-700">Product Images (Min. 5)</label>
+                        <div class="flex items-center justify-center w-full">
+                            <label for="images" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-500 mb-4"></i>
+                                    <p class="mb-2 text-lg text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                                    <p class="text-sm text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                                </div>
+                                <input id="images" name="images" type="file" class="hidden" multiple accept="image/*" required onchange="previewImages(event)">
+                            </label>
+                        </div>
+                        <!-- Image Preview Container -->
+                        <div id="imagePreviewContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4"></div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-blue-600 text-white py-4 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium text-lg">
+                        Add Product
+                    </button>
+                </form>
+            </div>
+
+            <script>
+            function previewImages(event) {
+                const container = document.getElementById('imagePreviewContainer');
+                container.innerHTML = '';
+                
+                const files = event.target.files;
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const div = document.createElement('div');
+                        div.className = 'relative';
+                        div.innerHTML = `
+                            <img src="${e.target.result}" class="w-full h-32 object-cover rounded-lg">
+                            <button type="button" onclick="this.parentElement.remove()" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        container.appendChild(div);
+                    }
+                    reader.readAsDataURL(file);
+                }
+            }
+            </script>
+
+            <!-- Product List -->
+            <div class="bg-white shadow rounded-lg p-6 md:col-span-2">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Your Products</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for product in products_page %}
+                                <tr class="hover:bg-gray-50 cursor-pointer transition-all" 
+                                    onclick="showModal('modal-{{product.id}}')">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ product.name }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.category.name }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="text-sm text-gray-900">${{ product.discounted_price }}</span>
+                                        <span class="text-xs text-red-500 ml-2">-{{ product.percentage_discount }}%</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {% if product.stock_quantity > 10 %}bg-green-100 text-green-800
+                                        {% elif product.stock_quantity > 0 %}bg-yellow-100 text-yellow-800
+                                        {% else %}bg-red-100 text-red-800{% endif %}">
+                                            {{ product.stock_quantity }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {% for timeslot in product.timeslots.all|slice:":1" %}
+                                            {{ timeslot.status|title }}
+                                        {% empty %}
+                                            No Timeslot
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+
+                                <!-- Modal for each product -->
+                                <div id="modal-{{product.id}}" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+                                    <div class="flex items-center justify-center min-h-screen p-4">
+                                        <div class="bg-white rounded-lg max-w-2xl w-full">
+                                            <div class="p-6">
+                                                <div class="flex justify-between items-center mb-4">
+                                                    <h2 class="text-2xl font-bold">{{ product.name }}</h2>
+                                                    <button onclick="hideModal('modal-{{product.id}}')" 
+                                                            class="text-gray-500 hover:text-gray-700">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div class="space-y-4">
+                                                        {% if product.images.all %}
+                                                            <div class="overflow-x-auto whitespace-nowrap">
+                                                                {% for image in product.images.all %}
+                                                                    <img src="{{ image.image.url }}" 
+                                                                         alt="{{ product.name }}" 
+                                                                         class="inline-block w-48 h-48 object-cover rounded-lg mr-2">
+                                                                {% endfor %}
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="space-y-4">
+                                                        <p class="text-gray-600">{{ product.description }}</p>
+                                                        <div class="space-y-2">
+                                                            <p class="font-semibold">Original Price: 
+                                                                <span class="text-gray-600">${{ product.original_price }}</span>
+                                                            </p>
+                                                            {% if product.discounted_price %}
+                                                                <p class="font-semibold">Discounted Price: 
+                                                                    <span class="text-green-600">${{ product.discounted_price }}</span>
+                                                                </p>
+                                                                <p class="font-semibold">Discount: 
+                                                                    <span class="text-red-600">{{ product.percentage_discount }}%</span>
+                                                                </p>
+                                                            {% endif %}
+                                                            <p class="font-semibold">Stock: 
+                                                                <span class="text-gray-600">{{ product.stock_quantity }}</span>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="px-6 py-4 text-sm text-gray-500 text-center">No products available.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Add this JavaScript for modal functionality -->
+                <script>
+                    function showModal(modalId) {
+                        document.getElementById(modalId).classList.remove('hidden');
+                        document.body.style.overflow = 'hidden';
+                    }
+
+                    function hideModal(modalId) {
+                        document.getElementById(modalId).classList.add('hidden');
+                        document.body.style.overflow = 'auto';
+                    }
+
+                    // Close modal when clicking outside
+                    window.onclick = function(event) {
+                        if (event.target.classList.contains('fixed')) {
+                            hideModal(event.target.id);
+                        }
+                    }
+                </script>
+
+                <!-- Product Pagination -->
+                <div class="mt-4 flex justify-between items-center">
+                    {% if products_page.has_previous %}
+                        <a href="?page={{ products_page.previous_page_number }}" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300">Previous</a>
+                    {% else %}
+                        <button class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md opacity-50 cursor-not-allowed" disabled>Previous</button>
+                    {% endif %}
+                    <span class="text-gray-600">Page {{ products_page.number }} of {{ products_page.paginator.num_pages }}</span>
+                    {% if products_page.has_next %}
+                        <a href="?page={{ products_page.next_page_number }}" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300">Next</a>
+                    {% else %}
+                        <button class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md opacity-50 cursor-not-allowed" disabled>Next</button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Timeslot Management Card -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Timeslot Management</h2>
+                
+                <!-- Assign Timeslot Section -->
+                <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-lg font-medium text-gray-700 mb-3">Assign Timeslot</h3>
+                    <form method="POST" action="{% url 'merchant_products' %}" class="space-y-4">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="assign_timeslot">
+                        <div class="grid grid-cols-1 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Select Product</label>
+                                <select name="product_id" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="" disabled selected>Choose product...</option>
+                                    {% for product in products_page %}
+                                        <option value="{{ product.id }}">{{ product.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Select Timeslot</label>
+                                <select name="timeslot_id" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="" disabled selected>Choose timeslot...</option>
+                                    {% for timeslot in timeslots %}
+                                        <option value="{{ timeslot.id }}">{{ timeslot.start_time|time:"H:i" }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                                Assign Timeslot
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Remove from Timeslot Section -->
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-lg font-medium text-gray-700 mb-3">Remove from Timeslot</h3>
+                    <form method="POST" action="{% url 'merchant_products' %}" class="space-y-4">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="remove_from_timeslot">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Select Product Timeslot</label>
+                            <select name="pts_id" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <option value="" disabled selected>Choose product timeslot...</option>
+                                {% for product in products_page %}
+                                    {% for timeslot in product.timeslots.all %}
+                                        {% if timeslot.status != "removed" %}
+                                            <option value="{{ timeslot.id }}">{{ product.name }} - {{ timeslot.start_time|time:"H:i" }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors">
+                            Remove from Timeslot
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Activity Logs -->
+            <div class="bg-white shadow rounded-lg p-6 md:col-span-3">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Activity Logs</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Detail</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comments</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for log in logs_page %}
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.timestamp|date:"Y-m-d H:i" }} - {{ log.product_timeslot.timeslot.name }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.action }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.comment }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="3" class="px-6 py-4 text-sm text-gray-500 text-center">No activity logs available.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Logs Pagination -->
+                <div class="mt-4 flex justify-between items-center">
+                    {% if logs_page.has_previous %}
+                        <a href="?log_page={{ logs_page.previous_page_number }}" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300">Previous</a>
+                    {% else %}
+                        <button class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md opacity-50 cursor-not-allowed" disabled>Previous</button>
+                    {% endif %}
+                    <span class="text-gray-600">Page {{ logs_page.number }} of {{ logs_page.paginator.num_pages }}</span>
+                    {% if logs_page.has_next %}
+                        <a href="?log_page={{ logs_page.next_page_number }}" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300">Next</a>
+                    {% else %}
+                        <button class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md opacity-50 cursor-not-allowed" disabled>Next</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+</body>
+</html>

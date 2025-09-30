@@ -72,7 +72,7 @@ class TimeSlotAdmin(admin.ModelAdmin):
 # --------------------------
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("name", "merchant", "category", "price", "stock_quantity", "created_at")
+    list_display = ("name", "merchant", "category","original_price", "discounted_price", "percentage_discount", "stock_quantity", "created_at")
     list_filter = ("category", "created_at")
     search_fields = ("name", "merchant__business_name")
     inlines = [ProductImageInline]

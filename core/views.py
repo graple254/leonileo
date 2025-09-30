@@ -1,11 +1,15 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from .models import *
-
+from django.db import transaction
 from .decorators import role_required
+from django.utils import timezone
+from django.core.paginator import Paginator
+from decimal import Decimal, InvalidOperation
+
 
 User = get_user_model()
 
@@ -89,16 +93,224 @@ def index(request):
 
 # MERCHANT VIEWS ###################################################################################################
 
+# ==========================================================================================
+# INSTRUCTIONS FOR COPILOT:
+# ==========================================================================================
+# Context:
+# - We only want 3 merchant views:
+#   1. merchant_dashboard(request)   
+#       * Show analytics + performance (basic counts, views, sales)
+#       * If profile missing -> redirect to create_merchant_profile
+#       * Allow editing of merchant profile (through a modal form in dashboard template)
+#   2. create_merchant_profile(request) 
+#       * Setup merchant profile if missing
+#   3. merchant_products(request) 
+#       * Handle ALL product-related operations
+#
+# Models already in codebase:
+# - User (role-based: CUSTOMER, MERCHANT, MODERATOR)
+# - MerchantProfile (business_name, location, whatsapp_number)
+# - Product (merchant FK, category FK, name, description, original_price, discounted_price,
+#            percentage_discount [auto-calculated], stock_quantity, created_at)
+# - Category, TimeSlot, ProductStatus, AuditLog, etc. (already defined above in models.py)
+#
+# Requirements:
+# ------------------------------------------------------------------------------------------
+# merchant_dashboard:
+# - Show profile details, analytics (e.g. product count, approved vs rejected products).
+# - Include ability to EDIT profile inline using a modal form (update merchant_profile).
+#
+# merchant_products:
+# - This SINGLE view should handle:
+#   a) Adding new products (POST request)
+#   b) Listing all merchant products (GET request)
+#   c) Assigning/removing products to/from time slots
+#   d) Viewing feedback from moderators (status + comments from ProductStatus)
+#   e) Viewing history & performance (use ProductStatus + AuditLog + query counts)
+#
+# Constraints:
+# - KEEP IT LEAN: don’t create multiple views for each small action.
+# - Use conditionals inside merchant_products to differentiate operations (GET/POST).
+# - Use Django messages framework for feedback.
+# - Redirect back to merchant_products after every action.
+# - Validate ownership: merchants should only manage their own products.
+#
+# Example flow:
+# - GET: render "files/merchant/products.html" with:
+#       * merchant’s product list
+#       * available time slots (status=waiting or live)
+#       * product statuses + feedback
+# - POST:
+#       * If "add_product" in request.POST -> create product
+#       * If "assign_timeslot" in request.POST -> assign product to slot
+#       * If "remove_timeslot" in request.POST -> remove product from slot
+#       * If "edit_profile" in request.POST -> update MerchantProfile from dashboard modal
+#
+# DO NOT invent new models or views. Extend from what’s already written.
+# ==========================================================================================
+
+
 @login_required
 @role_required("MERCHANT")
 def merchant_dashboard(request):
-    """Merchant dashboard. Redirect to profile creation if missing."""
+    if request.user.role != "MERCHANT":
+        messages.error(request, "Unauthorized access.")
+        return redirect("index")
+
     try:
-        profile = request.user.merchant_profile
+        merchant_profile = request.user.merchant_profile
     except MerchantProfile.DoesNotExist:
+        messages.info(request, "Please complete your merchant profile first.")
         return redirect("create_merchant_profile")
 
-    return render(request, "files/merchant/dashboard.html", {"profile": profile})
+    # ----------------------
+    # Profile Editing
+    # ----------------------
+    if request.method == "POST" and request.POST.get("action") == "edit_profile":
+        merchant_profile.business_name = request.POST.get("business_name")
+        merchant_profile.location = request.POST.get("location")
+        merchant_profile.whatsapp_number = request.POST.get("whatsapp_number")
+        merchant_profile.save()
+        messages.success(request, "Profile updated successfully!")
+        return redirect("merchant_dashboard")
+
+    # ----------------------
+    # Dashboard Analytics
+    # ----------------------
+    products = merchant_profile.products.all()
+    products_count = products.count()
+    slots_count = ProductTimeSlot.objects.filter(product__merchant=merchant_profile).count()
+
+    # Status breakdown
+    approved_count = ProductTimeSlot.objects.filter(
+        product__merchant=merchant_profile, status="approved"
+    ).count()
+    rejected_count = ProductTimeSlot.objects.filter(
+        product__merchant=merchant_profile, status="rejected"
+    ).count()
+    pending_count = ProductTimeSlot.objects.filter(
+        product__merchant=merchant_profile, status="pending"
+    ).count()
+    removed_count = ProductTimeSlot.objects.filter(
+        product__merchant=merchant_profile, status="removed"
+    ).count()
+
+    # ----------------------
+    # Latest activity
+    # ----------------------
+    latest_products = products.order_by("-created_at")[:5]
+    logs_qs = AuditLog.objects.filter(product_timeslot__product__merchant=merchant_profile).order_by("-timestamp")
+
+    paginator = Paginator(logs_qs, 5)  # paginate logs
+    page_number = request.GET.get("page")
+    logs_page = paginator.get_page(page_number)
+
+    context = {
+        "merchant": merchant_profile,
+        "products_count": products_count,
+        "slots_count": slots_count,
+        "approved_count": approved_count,
+        "rejected_count": rejected_count,
+        "pending_count": pending_count,
+        "removed_count": removed_count,
+        "latest_products": latest_products,
+        "logs_page": logs_page,
+    }
+    return render(request, "files/merchant/dashboard.html", context)
+
+
+
+
+# ------------------------------
+# Merchant Products
+# ------------------------------
+
+
+
+@login_required
+@role_required("MERCHANT")
+def merchant_products(request):
+    if request.user.role != "MERCHANT":
+        messages.error(request, "Unauthorized access.")
+        return redirect("home")
+
+    merchant_profile = request.user.merchant_profile
+
+    # ----------------------
+    # POST actions
+    # ----------------------
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        if action == "add_product":
+            try:
+                with transaction.atomic():
+                    product = Product.objects.create(
+                        merchant=merchant_profile,
+                        category_id=int(request.POST.get("category")),
+                        name=request.POST.get("name"),
+                        description=request.POST.get("description"),
+                        original_price=Decimal(request.POST.get("original_price")),
+                        discounted_price=Decimal(request.POST.get("discounted_price")),
+                        stock_quantity=int(request.POST.get("stock_quantity") or 0),
+                    )
+
+                    images = request.FILES.getlist("images")
+                    if len(images) < 5:
+                        raise ValueError("You must upload at least 5 images per product.")
+
+                    for img in images:
+                        ProductImage.objects.create(product=product, image=img)
+
+                    messages.success(request, "Product added successfully!")
+            except Exception as e:
+                messages.error(request, f"Error adding product: {e}")
+            return redirect("merchant_products")
+
+        elif action == "assign_timeslot":
+            try:
+                ProductTimeSlot.objects.create(
+                    product_id=request.POST.get("product_id"),
+                    timeslot_id=request.POST.get("timeslot_id"),
+                    status="pending",
+                )
+                messages.success(request, "Product submitted for moderation!")
+            except Exception as e:
+                messages.error(request, f"Error: {e}")
+            return redirect("merchant_products")
+
+        elif action == "remove_from_timeslot":
+            pts_id = request.POST.get("pts_id")
+            pts = get_object_or_404(ProductTimeSlot, id=pts_id, product__merchant=merchant_profile)
+            pts.delete()  # merchant withdrawal (not moderation)
+            messages.success(request, "Product withdrawn from timeslot.")
+            return redirect("merchant_products")
+
+
+    # ----------------------
+    # GET requests
+    # ----------------------
+    products_qs = merchant_profile.products.all().prefetch_related("images", "timeslots", "timeslots")
+    paginator = Paginator(products_qs, 10)  # paginate product list
+    page_number = request.GET.get("page")
+    products_page = paginator.get_page(page_number)
+
+    timeslots = TimeSlot.objects.all().order_by("start_time")
+    categories = Category.objects.all().order_by("name")
+
+    logs_qs = AuditLog.objects.filter(product_timeslot__product__merchant=merchant_profile).select_related("product_timeslot")
+    logs_paginator = Paginator(logs_qs.order_by("-timestamp"), 5)
+    logs_page = logs_paginator.get_page(request.GET.get("log_page"))
+
+    context = {
+        "merchant": merchant_profile,
+        "products_page": products_page,
+        "timeslots": timeslots,
+        "categories": categories,
+        "logs_page": logs_page,
+    }
+    return render(request, "files/merchant/products.html", context)
+
 
 
 @login_required
