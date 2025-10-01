@@ -225,14 +225,14 @@ def merchant_dashboard(request):
 # Merchant Products
 # ------------------------------
 
+from django.utils import timezone
 
-
-@login_required
+@login_required 
 @role_required("MERCHANT")
 def merchant_products(request):
     if request.user.role != "MERCHANT":
         messages.error(request, "Unauthorized access.")
-        return redirect("home")
+        return redirect("index")
 
     merchant_profile = request.user.merchant_profile
 
@@ -267,14 +267,80 @@ def merchant_products(request):
                 messages.error(request, f"Error adding product: {e}")
             return redirect("merchant_products")
 
+        elif action == "edit_product":
+            try:
+                product = get_object_or_404(
+                    Product, id=request.POST.get("product_id"), merchant=merchant_profile
+                )
+
+                # Basic fields
+                name = request.POST.get("name")
+                description = request.POST.get("description")
+                category_id = request.POST.get("category")
+                original_price = request.POST.get("original_price")
+                discounted_price = request.POST.get("discounted_price")
+                stock_quantity = request.POST.get("stock_quantity")
+
+                if name is not None:
+                    product.name = name.strip()
+                if description is not None:
+                    product.description = description
+
+                if category_id:
+                    product.category_id = int(category_id)
+
+                if original_price not in (None, ""):
+                    product.original_price = Decimal(original_price)
+                if discounted_price not in (None, ""):
+                    product.discounted_price = Decimal(discounted_price)
+
+                if (
+                    product.original_price is not None
+                    and product.discounted_price is not None
+                    and product.discounted_price > product.original_price
+                ):
+                    raise ValueError("Discounted price cannot be greater than original price.")
+
+                if stock_quantity not in (None, ""):
+                    sq = int(stock_quantity)
+                    if sq < 0:
+                        raise ValueError("Stock quantity cannot be negative.")
+                    product.stock_quantity = sq
+
+                product.save()
+                messages.success(request, "Product updated successfully!")
+            except (InvalidOperation, ValueError) as e:
+                messages.error(request, f"Error updating product: {e}")
+            except Exception as e:
+                messages.error(request, f"Unexpected error: {e}")
+            return redirect("merchant_products")
+
         elif action == "assign_timeslot":
             try:
-                ProductTimeSlot.objects.create(
-                    product_id=request.POST.get("product_id"),
-                    timeslot_id=request.POST.get("timeslot_id"),
-                    status="pending",
+                product = get_object_or_404(
+                    Product, id=request.POST.get("product_id"), merchant=merchant_profile
                 )
-                messages.success(request, "Product submitted for moderation!")
+                timeslot_id = request.POST.get("timeslot_id")
+                timeslot = get_object_or_404(TimeSlot, id=timeslot_id)
+
+                # ✅ Validation: block assignment if slot has started or status is ready
+                if timeslot.start_time <= timezone.now():
+                    messages.error(request, "You cannot assign products to a slot that has already started.")
+                    return redirect("merchant_products")
+
+                if timeslot.status == "ready":
+                    messages.error(request, "You cannot assign products to a slot marked as ready.")
+                    return redirect("merchant_products")
+
+                if ProductTimeSlot.objects.filter(product=product, timeslot=timeslot).exists():
+                    messages.info(request, "This product is already submitted for that timeslot.")
+                else:
+                    ProductTimeSlot.objects.create(
+                        product=product,
+                        timeslot=timeslot,
+                        status="pending",
+                    )
+                    messages.success(request, "Product submitted for moderation!")
             except Exception as e:
                 messages.error(request, f"Error: {e}")
             return redirect("merchant_products")
@@ -282,34 +348,81 @@ def merchant_products(request):
         elif action == "remove_from_timeslot":
             pts_id = request.POST.get("pts_id")
             pts = get_object_or_404(ProductTimeSlot, id=pts_id, product__merchant=merchant_profile)
-            pts.delete()  # merchant withdrawal (not moderation)
+            pts.delete()
             messages.success(request, "Product withdrawn from timeslot.")
             return redirect("merchant_products")
 
+        elif action in ("delete_product", "remove_product"):
+            try:
+                with transaction.atomic():
+                    product = get_object_or_404(
+                        Product, id=request.POST.get("product_id"), merchant=merchant_profile
+                    )
+                    for img in product.images.all():
+                        try:
+                            img.image.delete(save=False)
+                        except Exception:
+                            pass
+                        img.delete()
+                    ProductTimeSlot.objects.filter(product=product).delete()
+                    product.delete()
+                    messages.success(request, "Product deleted successfully.")
+            except Exception as e:
+                messages.error(request, f"Error deleting product: {e}")
+            return redirect("merchant_products")
 
     # ----------------------
     # GET requests
     # ----------------------
-    products_qs = merchant_profile.products.all().prefetch_related("images", "timeslots", "timeslots")
-    paginator = Paginator(products_qs, 10)  # paginate product list
+    products_qs = merchant_profile.products.all().prefetch_related("images", "timeslots")
+    paginator = Paginator(products_qs, 10)
     page_number = request.GET.get("page")
     products_page = paginator.get_page(page_number)
 
-    timeslots = TimeSlot.objects.all().order_by("start_time")
+    current_slots = (
+        TimeSlot.objects.filter(products__product__merchant=merchant_profile)
+        .exclude(end_time__lt=timezone.now())
+        .distinct()
+        .order_by("start_time")
+    )
+
+
+
+
+    # ✅ Past slots (already ended)
+    history_slots = (
+        TimeSlot.objects.filter(products__product__merchant=merchant_profile)
+        .filter(end_time__lt=timezone.now())
+        .distinct()
+        .order_by("-start_time")
+    )
+
+    # ✅ Upcoming slots (future + not ready)
+    upcoming_slots = (
+        TimeSlot.objects.filter(start_time__gt=timezone.now())
+        .exclude(status="ready")
+        .order_by("start_time")
+    )
+
     categories = Category.objects.all().order_by("name")
 
-    logs_qs = AuditLog.objects.filter(product_timeslot__product__merchant=merchant_profile).select_related("product_timeslot")
+    logs_qs = AuditLog.objects.filter(
+        product_timeslot__product__merchant=merchant_profile
+    ).select_related("product_timeslot")
     logs_paginator = Paginator(logs_qs.order_by("-timestamp"), 5)
     logs_page = logs_paginator.get_page(request.GET.get("log_page"))
 
     context = {
         "merchant": merchant_profile,
         "products_page": products_page,
-        "timeslots": timeslots,
         "categories": categories,
         "logs_page": logs_page,
+        "history_slots": history_slots,
+        "upcoming_slots": upcoming_slots,
+        "current_slots": current_slots,
     }
     return render(request, "files/merchant/products.html", context)
+
 
 
 

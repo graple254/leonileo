@@ -10,7 +10,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </head>
 <body class="bg-gray-100 font-sans">
-    <div class="container mx-auto p-6">
+    
+    <div class="container mx-auto p-6 pb-32 md:pb-6">
         <!-- Header -->
         <!-- Sticky Header -->
         <header class="bg-white shadow-lg rounded-lg p-6 mb-6 flex justify-between items-center sticky top-4 mx-2 z-50">
@@ -55,30 +56,28 @@
 
         <!-- Dashboard Grid -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+
             <!-- Add Product Form -->
             <div class="bg-white shadow rounded-lg p-6">
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Add New Product</h2>
                 <form method="POST" action="{% url 'merchant_products' %}" enctype="multipart/form-data" class="space-y-6">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="add_product">
-                    
-                    <!-- Enhanced Category Dropdown -->
-                    <div class="mb-6">
+
+                    <!-- Category Dropdown -->
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Select Category</label>
                         <div class="relative">
                             <select name="category" required
-                                class="block appearance-none w-full bg-white border border-gray-300 rounded-lg py-4 px-4 pr-8 text-lg
-                                       cursor-pointer hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                       focus:border-transparent transition-all">
+                                class="block w-full rounded-md border border-gray-400 bg-gray-50 py-3 px-4 pr-8 text-base
+                                    cursor-pointer focus:border-blue-500 focus:ring-blue-500">
                                 <option value="" disabled selected>Choose a category...</option>
                                 {% for category in categories %}
-                                <option value="{{ category.id }}" class="py-2">
-                                    {{ category.name }}
-                                </option>
+                                    <option value="{{ category.id }}">{{ category.name }}</option>
                                 {% endfor %}
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                <i class="fas fa-chevron-down"></i>
                             </div>
                         </div>
                     </div>
@@ -86,61 +85,74 @@
                     <!-- Basic Information -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700">Product Name</label>
-                            <input type="text" id="name" name="name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-3 text-lg" required>
+                            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
+                            <input type="text" id="name" name="name"
+                                class="block w-full rounded-md border border-gray-400 bg-gray-50 py-3 px-4 text-base
+                                    focus:border-blue-500 focus:ring-blue-500" required>
                         </div>
                         <div>
-                            <label for="stock_quantity" class="block text-sm font-medium text-gray-700">Stock Quantity</label>
-                            <input type="number" id="stock_quantity" name="stock_quantity" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-3 text-lg" required>
+                            <label for="stock_quantity" class="block text-sm font-medium text-gray-700 mb-2">Stock Quantity</label>
+                            <input type="number" id="stock_quantity" name="stock_quantity"
+                                class="block w-full rounded-md border border-gray-400 bg-gray-50 py-3 px-4 text-base
+                                    focus:border-blue-500 focus:ring-blue-500" required>
                         </div>
                     </div>
 
                     <!-- Price Fields -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label for="original_price" class="block text-sm font-medium text-gray-700">Original Price (Kshs)</label>
-                            <div class="mt-1 relative rounded-md shadow-sm">
+                            <label for="original_price" class="block text-sm font-medium text-gray-700 mb-2">Original Price (Kshs)</label>
+                            <div class="relative rounded-md">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-500 text-lg">Kshs</span>
+                                    <span class="text-gray-500">Kshs</span>
                                 </div>
-                                <input type="number" id="original_price" name="original_price" step="0.01" class="pl-16 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 py-3 text-lg" required>
+                                <input type="number" id="original_price" name="original_price" step="0.01"
+                                    class="pl-16 block w-full rounded-md border border-gray-400 bg-gray-50 py-3 px-4 text-base
+                                        focus:border-blue-500 focus:ring-blue-500" required>
                             </div>
                         </div>
                         <div>
-                            <label for="discounted_price" class="block text-sm font-medium text-gray-700">Discounted Price (Kshs)</label>
-                            <div class="mt-1 relative rounded-md shadow-sm">
+                            <label for="discounted_price" class="block text-sm font-medium text-gray-700 mb-2">Discounted Price (Kshs)</label>
+                            <div class="relative rounded-md">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-500 text-lg">Kshs</span>
+                                    <span class="text-gray-500">Kshs</span>
                                 </div>
-                                <input type="number" id="discounted_price" name="discounted_price" step="0.01" class="pl-16 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 py-3 text-lg" required>
+                                <input type="number" id="discounted_price" name="discounted_price" step="0.01"
+                                    class="pl-16 block w-full rounded-md border border-gray-400 bg-gray-50 py-3 px-4 text-base
+                                        focus:border-blue-500 focus:ring-blue-500" required>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Description with Resizable Textarea -->
+                    <!-- Description -->
                     <div>
-                        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                        <textarea id="description" name="description" rows="6" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-lg resize-y min-h-[150px]" required></textarea>
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="description" name="description" rows="6"
+                            class="block w-full rounded-md border border-gray-400 bg-gray-50 py-3 px-4 text-base
+                                focus:border-blue-500 focus:ring-blue-500 resize-y min-h-[150px]" required></textarea>
                     </div>
 
                     <!-- Image Upload -->
                     <div class="space-y-4">
                         <label class="block text-sm font-medium text-gray-700">Product Images (Min. 5)</label>
                         <div class="flex items-center justify-center w-full">
-                            <label for="images" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                            <label for="images"
+                                class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-400 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
                                 <div class="flex flex-col items-center justify-center pt-5 pb-6">
                                     <i class="fas fa-cloud-upload-alt text-4xl text-gray-500 mb-4"></i>
-                                    <p class="mb-2 text-lg text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                                    <p class="mb-2 text-base text-gray-600"><span class="font-semibold">Click to upload</span> or drag and drop</p>
                                     <p class="text-sm text-gray-500">PNG, JPG, GIF up to 10MB</p>
                                 </div>
                                 <input id="images" name="images" type="file" class="hidden" multiple accept="image/*" required onchange="previewImages(event)">
                             </label>
                         </div>
-                        <!-- Image Preview Container -->
+                        <!-- Image Preview -->
                         <div id="imagePreviewContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4"></div>
                     </div>
 
-                    <button type="submit" class="w-full bg-blue-600 text-white py-4 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium text-lg">
+                    <!-- Submit -->
+                    <button type="submit"
+                        class="w-full bg-blue-600 text-white py-4 px-4 rounded-md hover:bg-blue-700 font-medium text-lg">
                         Add Product
                     </button>
                 </form>
@@ -160,9 +172,10 @@
                         const div = document.createElement('div');
                         div.className = 'relative';
                         div.innerHTML = `
-                            <img src="${e.target.result}" class="w-full h-32 object-cover rounded-lg">
-                            <button type="button" onclick="this.parentElement.remove()" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center">
-                                <i class="fas fa-times"></i>
+                            <img src="${e.target.result}" class="w-full h-32 object-cover rounded-lg border border-gray-300">
+                            <button type="button" onclick="this.parentElement.remove()" 
+                                    class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center">
+                                <i class="fas fa-times text-xs"></i>
                             </button>
                         `;
                         container.appendChild(div);
@@ -171,7 +184,6 @@
                 }
             }
             </script>
-
             <!-- Product List -->
             <div class="bg-white shadow rounded-lg p-6 md:col-span-2">
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Your Products</h2>
@@ -181,22 +193,28 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Original Price</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discounted Price</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">In Stock</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             {% for product in products_page %}
-                                <tr class="hover:bg-gray-50 cursor-pointer transition-all" 
-                                    onclick="showModal('modal-{{product.id}}')">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ product.name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.category.name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="text-sm text-gray-900">${{ product.discounted_price }}</span>
+                                <tr class="hover:bg-gray-50 transition-all">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 cursor-pointer" 
+                                        onclick="showModal('modal-{{product.id}}')">{{ product.name }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 cursor-pointer" 
+                                        onclick="showModal('modal-{{product.id}}')">{{ product.category.name }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap cursor-pointer" 
+                                        onclick="showModal('modal-{{product.id}}')">Kshs {{ product.original_price }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap cursor-pointer" 
+                                        onclick="showModal('modal-{{product.id}}')">
+                                        <span class="text-sm text-gray-900">Kshs {{ product.discounted_price }}</span>
                                         <span class="text-xs text-red-500 ml-2">-{{ product.percentage_discount }}%</span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-6 py-4 whitespace-nowrap cursor-pointer" 
+                                        onclick="showModal('modal-{{product.id}}')">
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                         {% if product.stock_quantity > 10 %}bg-green-100 text-green-800
                                         {% elif product.stock_quantity > 0 %}bg-yellow-100 text-yellow-800
@@ -204,16 +222,23 @@
                                             {{ product.stock_quantity }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {% for timeslot in product.timeslots.all|slice:":1" %}
-                                            {{ timeslot.status|title }}
-                                        {% empty %}
-                                            No Timeslot
-                                        {% endfor %}
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex space-x-2">
+                                            <!-- Edit Button -->
+                                            <button onclick="openEditModal('{{ product.id }}')" 
+                                                    class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-md text-sm font-medium transition-colors">
+                                                Edit
+                                            </button>
+                                            <!-- Delete Button -->
+                                            <button onclick="confirmDelete('{{ product.id }}', '{{ product.name|escapejs }}')" 
+                                                    class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md text-sm font-medium transition-colors">
+                                                Delete
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
 
-                                <!-- Modal for each product -->
+                                <!-- Product Detail Modal -->
                                 <div id="modal-{{product.id}}" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
                                     <div class="flex items-center justify-center min-h-screen p-4">
                                         <div class="bg-white rounded-lg max-w-2xl w-full">
@@ -231,27 +256,27 @@
                                                             <div class="overflow-x-auto whitespace-nowrap">
                                                                 {% for image in product.images.all %}
                                                                     <img src="{{ image.image.url }}" 
-                                                                         alt="{{ product.name }}" 
-                                                                         class="inline-block w-48 h-48 object-cover rounded-lg mr-2">
+                                                                        alt="{{ product.name }}" 
+                                                                        class="inline-block w-48 h-48 object-cover rounded-lg mr-2">
                                                                 {% endfor %}
                                                             </div>
                                                         {% endif %}
                                                     </div>
                                                     <div class="space-y-4">
-                                                        <p class="text-gray-600">{{ product.description }}</p>
+                                                        <p class="text-gray-600"><b>Description:</b> {{ product.description }}</p>
                                                         <div class="space-y-2">
                                                             <p class="font-semibold">Original Price: 
-                                                                <span class="text-gray-600">${{ product.original_price }}</span>
+                                                                <span class="text-gray-600">Kshs {{ product.original_price }}</span>
                                                             </p>
                                                             {% if product.discounted_price %}
                                                                 <p class="font-semibold">Discounted Price: 
-                                                                    <span class="text-green-600">${{ product.discounted_price }}</span>
+                                                                    <span class="text-green-600">Kshs {{ product.discounted_price }}</span>
                                                                 </p>
                                                                 <p class="font-semibold">Discount: 
                                                                     <span class="text-red-600">{{ product.percentage_discount }}%</span>
                                                                 </p>
                                                             {% endif %}
-                                                            <p class="font-semibold">Stock: 
+                                                            <p class="font-semibold">In Stock: 
                                                                 <span class="text-gray-600">{{ product.stock_quantity }}</span>
                                                             </p>
                                                         </div>
@@ -263,11 +288,119 @@
                                 </div>
                             {% empty %}
                                 <tr>
-                                    <td colspan="5" class="px-6 py-4 text-sm text-gray-500 text-center">No products available.</td>
+                                    <td colspan="6" class="px-6 py-4 text-sm text-gray-500 text-center">No products available.</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Edit Product Modal -->
+                <div id="edit-product-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+                    <div class="flex items-center justify-center min-h-screen p-4">
+                        <div class="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
+                            <div class="p-6">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h2 class="text-2xl font-bold">Edit Product</h2>
+                                    <button onclick="hideModal('edit-product-modal')" 
+                                            class="text-gray-500 hover:text-gray-700">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <form id="edit-product-form" method="post" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="edit_product">
+                                    <input type="hidden" id="edit-product-id" name="product_id">
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                        <div>
+                                            <label for="edit-name" class="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                                            <input type="text" id="edit-name" name="name" required
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                        </div>
+                                        <div>
+                                            <label for="edit-category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                                            <select id="edit-category" name="category" required
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                                <option value="">Select Category</option>
+                                                {% for category in categories %}
+                                                    <option value="{{ category.id }}">{{ category.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label for="edit-description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                        <textarea id="edit-description" name="description" rows="3"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                        <div>
+                                            <label for="edit-original-price" class="block text-sm font-medium text-gray-700 mb-1">Original Price (Kshs)</label>
+                                            <input type="number" id="edit-original-price" name="original_price" step="0.01" min="0" required
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                        </div>
+                                        <div>
+                                            <label for="edit-discounted-price" class="block text-sm font-medium text-gray-700 mb-1">Discounted Price (Kshs)</label>
+                                            <input type="number" id="edit-discounted-price" name="discounted_price" step="0.01" min="0"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                        </div>
+                                        <div>
+                                            <label for="edit-stock-quantity" class="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label>
+                                            <input type="number" id="edit-stock-quantity" name="stock_quantity" min="0" required
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                        </div>
+                                    </div>
+
+                                    <div class="flex justify-end space-x-3 mt-6">
+                                        <button type="button" onclick="hideModal('edit-product-modal')" 
+                                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors">
+                                            Cancel
+                                        </button>
+                                        <button type="submit" 
+                                                class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors">
+                                            Update Product
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delete Confirmation Modal -->
+                <div id="delete-confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+                    <div class="flex items-center justify-center min-h-screen p-4">
+                        <div class="bg-white rounded-lg max-w-md w-full">
+                            <div class="p-6">
+                                <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                                    <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-900 text-center mb-2">Delete Product</h3>
+                                <p class="text-sm text-gray-600 text-center mb-6">
+                                    Are you sure you want to delete "<span id="delete-product-name" class="font-semibold"></span>"? 
+                                    This action cannot be undone.
+                                </p>
+                                <div class="flex justify-center space-x-3">
+                                    <button onclick="hideModal('delete-confirm-modal')" 
+                                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors">
+                                        Cancel
+                                    </button>
+                                    <form id="delete-product-form" method="post" class="inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="delete_product">
+                                        <input type="hidden" id="delete-product-id" name="product_id">
+                                        <button type="submit" 
+                                                class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors">
+                                            Delete Product
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Add this JavaScript for modal functionality -->
@@ -288,6 +421,35 @@
                             hideModal(event.target.id);
                         }
                     }
+
+                    // Edit product functionality
+                    function openEditModal(productId) {
+                        // In a real implementation, you would fetch the product data via AJAX
+                        // For now, we'll set up the form and show the modal
+                        document.getElementById('edit-product-id').value = productId;
+                        
+                        // You would populate the form fields with current product data here
+                        // This would typically be done via an AJAX call to get product details
+                        // For now, we'll just show the modal
+                        showModal('edit-product-modal');
+                    }
+
+                    // Delete product functionality
+                    function confirmDelete(productId, productName) {
+                        document.getElementById('delete-product-id').value = productId;
+                        document.getElementById('delete-product-name').textContent = productName;
+                        showModal('delete-confirm-modal');
+                    }
+
+                    // Form submission handlers
+                    document.getElementById('edit-product-form').addEventListener('submit', function(e) {
+                        // Add any client-side validation here
+                        console.log('Submitting edit form for product:', document.getElementById('edit-product-id').value);
+                    });
+
+                    document.getElementById('delete-product-form').addEventListener('submit', function(e) {
+                        console.log('Submitting delete form for product:', document.getElementById('delete-product-id').value);
+                    });
                 </script>
 
                 <!-- Product Pagination -->
@@ -306,87 +468,369 @@
                 </div>
             </div>
 
-            <!-- Timeslot Management Card -->
+            <!-- Clearance Periods Section -->
             <div class="bg-white shadow rounded-lg p-6">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">Timeslot Management</h2>
-                
-                <!-- Assign Timeslot Section -->
-                <div class="mb-6 p-4 bg-gray-50 rounded-lg">
-                    <h3 class="text-lg font-medium text-gray-700 mb-3">Assign Timeslot</h3>
-                    <form method="POST" action="{% url 'merchant_products' %}" class="space-y-4">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="assign_timeslot">
-                        <div class="grid grid-cols-1 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Select Product</label>
-                                <select name="product_id" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="" disabled selected>Choose product...</option>
-                                    {% for product in products_page %}
-                                        <option value="{{ product.id }}">{{ product.name }}</option>
-                                    {% endfor %}
-                                </select>
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Clearance Sales Schedule</h2>
+            
+                <!-- Upcoming Clearance Periods -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium text-gray-700 mb-3">Upcoming Clearance Periods</h3>
+                    <div class="flex space-x-4 overflow-x-auto pb-2">
+                        {% for timeslot in upcoming_slots %}
+                        <div class="flex-shrink-0 w-64 bg-gray-50 rounded-lg shadow cursor-pointer hover:bg-blue-50 transition"
+                            onclick="document.getElementById('timeslot-modal-{{ timeslot.id }}').classList.remove('hidden')">
+                            <div class="p-4">
+                                <p class="font-semibold text-gray-800">{{ timeslot.name }}</p>
+                                <p class="text-sm text-gray-600">
+                                    {{ timeslot.start_time|date:"M d, H:i" }} - {{ timeslot.end_time|date:"H:i" }}
+                                </p>
+                                <span class="mt-2 inline-block text-xs px-2 py-1 rounded 
+                                            {% if timeslot.status == 'waiting' %}bg-yellow-100 text-yellow-800
+                                            {% elif timeslot.status == 'live' %}bg-green-100 text-green-800
+                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ timeslot.get_status_display }}
+                                </span>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Select Timeslot</label>
-                                <select name="timeslot_id" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="" disabled selected>Choose timeslot...</option>
-                                    {% for timeslot in timeslots %}
-                                        <option value="{{ timeslot.id }}">{{ timeslot.start_time|time:"H:i" }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
-                                Assign Timeslot
+                        </div>
+                        {% empty %}
+                        <p class="text-gray-500">No upcoming clearance periods.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            
+            
+            
+                <!-- Current Clearance Slots -->
+                <!-- Current Slots (submitted products) -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium text-gray-700 mb-3">Active listings</h3>
+                    <div class="flex space-x-4 overflow-x-auto pb-2">
+                        {% for timeslot in current_slots %}
+                        <div class="flex-shrink-0 w-64 p-4 bg-blue-50 rounded-lg shadow cursor-pointer hover:bg-blue-100 transition"
+                            onclick="document.getElementById('current-modal-{{ timeslot.id }}').classList.remove('hidden')">
+                            <p class="font-semibold text-gray-800">{{ timeslot.name }}</p>
+                            <p class="text-sm text-gray-600">
+                                {{ timeslot.start_time|date:"M d, H:i" }} – {{ timeslot.end_time|date:"H:i" }}
+                            </p>
+                            <span class="mt-2 inline-block text-xs px-2 py-1 rounded 
+                                    {% if timeslot.status == 'waiting' %}bg-yellow-100 text-yellow-800
+                                    {% elif timeslot.status == 'live' %}bg-green-100 text-green-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ timeslot.get_status_display }}
+                            </span>
+                        </div>
+                        {% empty %}
+                        <p class="text-gray-500">You haven’t submitted products to any slots yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            
+                <!-- Past Clearance History -->
+                <div>
+                    <h3 class="text-lg font-medium text-gray-700 mb-3">Past Clearance History</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for timeslot in history_slots %}
+                        <div class="p-4 bg-gray-100 rounded-lg shadow">
+                            <p class="font-semibold text-gray-800">{{ timeslot.name }}</p>
+                            <p class="text-sm text-gray-600">
+                                {{ timeslot.start_time|date:"M d, H:i" }} - {{ timeslot.end_time|date:"H:i" }}
+                            </p>
+                            <p class="text-sm text-gray-500">
+                                Products: {{ timeslot.product_timeslots.count }}
+                            </p>
+                            <span class="mt-2 inline-block text-xs px-2 py-1 rounded bg-gray-200 text-gray-700">
+                                Completed
+                            </span>
+                        </div>
+                        {% empty %}
+                        <p class="text-gray-500">No past clearance history yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            
+            
+            
+            
+            </div>
+            
+            <!-- Timeslot Modals (Assign Products) - One for each upcoming slot -->
+            {% for timeslot in upcoming_slots %}
+            <div id="timeslot-modal-{{ timeslot.id }}" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 p-4">
+                <div class="flex items-center justify-center min-h-screen">
+                    <div class="bg-white w-full max-w-lg rounded-lg shadow-lg p-6 max-h-[90vh] overflow-y-auto">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-semibold">List Products in Clearance</h2>
+                            <button onclick="document.getElementById('timeslot-modal-{{ timeslot.id }}').classList.add('hidden')"
+                                class="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100">
+                                <i class="fas fa-times"></i>
                             </button>
                         </div>
-                    </form>
-                </div>
-
-                <!-- Remove from Timeslot Section -->
-                <div class="p-4 bg-gray-50 rounded-lg">
-                    <h3 class="text-lg font-medium text-gray-700 mb-3">Remove from Timeslot</h3>
-                    <form method="POST" action="{% url 'merchant_products' %}" class="space-y-4">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="remove_from_timeslot">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Select Product Timeslot</label>
-                            <select name="pts_id" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                <option value="" disabled selected>Choose product timeslot...</option>
-                                {% for product in products_page %}
-                                    {% for timeslot in product.timeslots.all %}
-                                        {% if timeslot.status != "removed" %}
-                                            <option value="{{ timeslot.id }}">{{ product.name }} - {{ timeslot.start_time|time:"H:i" }}</option>
-                                        {% endif %}
-                                    {% endfor %}
-                                {% endfor %}
-                            </select>
+            
+                        <div class="mb-4 p-3 bg-blue-50 rounded-lg">
+                            <p class="font-medium text-gray-800">{{ timeslot.name }}</p>
+                            <p class="text-sm text-gray-600">
+                                {{ timeslot.start_time|date:"M d, H:i" }} to {{ timeslot.end_time|date:"H:i" }}
+                            </p>
+                            <span class="inline-block mt-1 text-xs px-2 py-1 rounded 
+                                            {% if timeslot.status == 'waiting' %}bg-yellow-100 text-yellow-800
+                                            {% elif timeslot.status == 'live' %}bg-green-100 text-green-800
+                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ timeslot.get_status_display }}
+                            </span>
                         </div>
-                        <button type="submit" class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors">
-                            Remove from Timeslot
-                        </button>
-                    </form>
+            
+                        <form method="POST" action="{% url 'merchant_products' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="assign_timeslot">
+                            <input type="hidden" name="timeslot_id" value="{{ timeslot.id }}">
+            
+                            <div class="space-y-4">
+                                <label class="block text-sm font-medium text-gray-700">Select Product</label>
+                                <select name="product_id"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Choose a product...</option>
+                                    {% for product in products_page %}
+                                    <option value="{{ product.id }}">{{ product.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p class="text-xs text-gray-500">Only your available products are listed</p>
+                            </div>
+            
+                            <div class="mt-6 flex justify-end space-x-3">
+                                <button type="button"
+                                    onclick="document.getElementById('timeslot-modal-{{ timeslot.id }}').classList.add('hidden')"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors">
+                                    Cancel
+                                </button>
+                                <button type="submit"
+                                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors">
+                                    Submit Product
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
+            {% endfor %}
+            
+            {% for timeslot in current_slots %}
+            <div id="current-modal-{{ timeslot.id }}"
+                class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+                <div class="bg-white rounded-lg shadow-lg max-w-lg w-full p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ timeslot.name }}</h3>
+                    <p class="text-sm text-gray-600 mb-4">
+                        {{ timeslot.start_time|date:"M d, H:i" }} – {{ timeslot.end_time|date:"H:i" }}
+                    </p>
+            
+                    <!-- List products in this slot -->
+                    <ul class="space-y-3 max-h-60 overflow-y-auto">
+                        {% for pts in timeslot.products.all %}
+                        <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                            <div>
+                                <p class="font-medium">{{ pts.product.name }}</p>
+                                <p class="text-xs text-gray-500">Status: {{ pts.status }}</p>
+                            </div>
+                            <!-- Withdraw action -->
+                            <form method="POST" action="{% url 'merchant_products' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="remove_from_timeslot">
+                                <input type="hidden" name="pts_id" value="{{ pts.id }}">
+                                <button class="text-red-600 hover:underline text-sm">Withdraw</button>
+                            </form>
+                        </li>
+                        {% empty %}
+                        <p class="text-gray-500">No products submitted here yet.</p>
+                        {% endfor %}
+                    </ul>
+            
+                    <!-- Close -->
+                    <div class="mt-6 flex justify-end">
+                        <button onclick="document.getElementById('current-modal-{{ timeslot.id }}').classList.add('hidden')"
+                            class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            
+            <script>
+                // Close modals when clicking outside
+                document.addEventListener('click', function (event) {
+                    if (event.target.classList.contains('fixed')) {
+                        event.target.classList.add('hidden');
+                    }
+                });
+
+                // Close modals with Escape key
+                document.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape') {
+                        document.querySelectorAll('.fixed').forEach(modal => {
+                            modal.classList.add('hidden');
+                        });
+                    }
+                });
+            </script>
 
             <!-- Activity Logs -->
-            <div class="bg-white shadow rounded-lg p-6 md:col-span-3">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">Activity Logs</h2>
+            <!-- Activity Logs Card -->
+            <div class="bg-white shadow rounded-lg p-6 md:col-span-2">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Your Listings Activity Logs</h2>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Detail</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comments</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comment</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             {% for log in logs_page %}
-                                <tr>
+                                <tr onclick="openLogModal('log-modal-{{log.id}}')" class="hover:bg-gray-50 cursor-pointer">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.timestamp|date:"Y-m-d H:i" }} - {{ log.product_timeslot.timeslot.name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.action }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.comment }}</td>
                                 </tr>
+                                <!-- Detailed Modal for Log Entry -->
+                                <div id="log-modal-{{log.id}}" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 overflow-y-auto">
+                                    <div class="flex items-center justify-center min-h-screen p-4">
+                                        <div class="bg-white rounded-lg w-full max-w-4xl my-8">
+                                            <!-- Modal Header - Sticky -->
+                                            <div class="sticky top-0 bg-white border-b border-gray-200 p-4 rounded-t-lg">
+                                                <div class="flex justify-between items-center">
+                                                    <h2 class="text-xl font-bold text-gray-800">Activity Log Details</h2>
+                                                    <button onclick="closeLogModal('log-modal-{{log.id}}')" 
+                                                            class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                                                        <i class="fas fa-times text-gray-500"></i>
+                                                    </button>
+                                                </div>
+                                                <!-- Tabs -->
+                                                <div class="flex space-x-4 mt-4 border-b">
+                                                    <button onclick="switchTab('{{log.id}}', 'audit')" 
+                                                            class="tab-button tab-{{log.id}}-audit px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600">
+                                                        <i class="fas fa-clipboard-list mr-2"></i>Audit Info
+                                                    </button>
+                                                    <button onclick="switchTab('{{log.id}}', 'product')"
+                                                            class="tab-button tab-{{log.id}}-product px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700">
+                                                        <i class="fas fa-box mr-2"></i>Product Details
+                                                    </button>
+                                                    <button onclick="switchTab('{{log.id}}', 'timeslot')"
+                                                            class="tab-button tab-{{log.id}}-timeslot px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700">
+                                                        <i class="fas fa-clock mr-2"></i>TimeSlot
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <!-- Modal Content - Scrollable -->
+                                            <div class="p-4 max-h-[calc(100vh-16rem)] overflow-y-auto">
+                                                <!-- Audit Tab -->
+                                                <div id="tab-{{log.id}}-audit" class="tab-content">
+                                                    <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                                                        <div class="grid grid-cols-2 gap-4">
+                                                            <p class="text-sm"><span class="font-medium">Timestamp:</span><br>
+                                                                {{ log.timestamp|date:"Y-m-d H:i:s" }}</p>
+                                                            <p class="text-sm"><span class="font-medium">Moderator:</span><br>
+                                                                {{ log.moderator.username }}</p>
+                                                            <p class="text-sm"><span class="font-medium">Action:</span><br>
+                                                                <span class="inline-block mt-1 px-3 py-1 rounded-full text-xs font-medium
+                                                                    {% if log.action == 'approve' %}bg-green-100 text-green-800
+                                                                    {% elif log.action == 'reject' %}bg-red-100 text-red-800
+                                                                    {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                                                    {{ log.action }}
+                                                                </span>
+                                                            </p>
+                                                            <p class="text-sm col-span-2"><span class="font-medium">Comment:</span><br>
+                                                                {{ log.comment|default:"No comment provided" }}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Product Tab -->
+                                                <div id="tab-{{log.id}}-product" class="tab-content hidden">
+                                                    <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                                                        <div class="grid grid-cols-2 gap-4">
+                                                            <p class="text-sm"><span class="font-medium">Name:</span><br>
+                                                                {{ log.product_timeslot.product.name }}</p>
+                                                            <p class="text-sm"><span class="font-medium">Original Price:</span><br>
+                                                                Kshs {{ log.product_timeslot.product.original_price }}</p>
+                                                            <p class="text-sm"><span class="font-medium">Discounted Price:</span><br>
+                                                                Kshs {{ log.product_timeslot.product.discounted_price }}</p>
+                                                            <p class="text-sm"><span class="font-medium">Discount:</span><br>
+                                                                <span class="text-red-600">{{ log.product_timeslot.product.percentage_discount }}%</span></p>
+                                                                <div class="col-span-2">
+                                                                    <span class="font-medium text-sm">Product Image:</span><br>
+                                                                    <div class="flex justify-center mt-2">
+                                                                        {% if log.product_timeslot.product.images.first %}
+                                                                            <div class="relative w-full max-w-md">
+                                                                                <img src="{{ log.product_timeslot.product.images.first.image.url }}" 
+                                                                                    alt="{{ log.product_timeslot.product.name }}" 
+                                                                                    class="w-full h-48 object-cover rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                                                                                <div class="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent rounded-lg"></div>
+                                                                            </div>
+                                                                        {% else %}
+                                                                            <div class="w-full max-w-md h-48 bg-gray-100 rounded-lg flex items-center justify-center">
+                                                                                <p class="text-sm text-gray-500">No image available</p>
+                                                                            </div>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- TimeSlot Tab -->
+                                                <div id="tab-{{log.id}}-timeslot" class="tab-content hidden">
+                                                    <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                                                        <div class="grid grid-cols-2 gap-4">
+                                                            <p class="text-sm"><span class="font-medium">Name:</span><br>
+                                                                {{ log.product_timeslot.timeslot.name }}</p>
+                                                            <p class="text-sm"><span class="font-medium">Status:</span><br>
+                                                                <span class="inline-block mt-1 px-3 py-1 rounded-full text-xs font-medium
+                                                                    {% if log.product_timeslot.timeslot.status == 'active' %}bg-green-100 text-green-800
+                                                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                                    {{ log.product_timeslot.timeslot.status }}
+                                                                </span>
+                                                            </p>
+                                                            <p class="text-sm"><span class="font-medium">Start Time:</span><br>
+                                                                {{ log.product_timeslot.timeslot.start_time|date:"Y-m-d H:i" }}</p>
+                                                            <p class="text-sm"><span class="font-medium">End Time:</span><br>
+                                                                {{ log.product_timeslot.timeslot.end_time|date:"Y-m-d H:i" }}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Modal Footer - Sticky -->
+                                            <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 rounded-b-lg">
+                                                <button onclick="closeLogModal('log-modal-{{log.id}}')"
+                                                        class="w-full sm:w-auto px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md transition-colors">
+                                                    Close Details
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <script>
+                                    function switchTab(logId, tabName) {
+                                        // Hide all tab contents
+                                        document.querySelectorAll(`[id^="tab-${logId}-"]`).forEach(tab => {
+                                            tab.classList.add('hidden');
+                                        });
+                                        // Show selected tab content
+                                        document.getElementById(`tab-${logId}-${tabName}`).classList.remove('hidden');
+                                        
+                                        // Update tab buttons
+                                        document.querySelectorAll(`[class^="tab-${logId}-"]`).forEach(button => {
+                                            button.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+                                            button.classList.add('text-gray-500');
+                                        });
+                                        document.querySelector(`.tab-${logId}-${tabName}`).classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+                                    }
+                                </script>
                             {% empty %}
                                 <tr>
                                     <td colspan="3" class="px-6 py-4 text-sm text-gray-500 text-center">No activity logs available.</td>
@@ -395,21 +839,31 @@
                         </tbody>
                     </table>
                 </div>
-                <!-- Logs Pagination -->
+                <!-- Pagination -->
                 <div class="mt-4 flex justify-between items-center">
                     {% if logs_page.has_previous %}
-                        <a href="?log_page={{ logs_page.previous_page_number }}" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300">Previous</a>
+                        <a href="?page={{ logs_page.previous_page_number }}" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300">Previous</a>
                     {% else %}
                         <button class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md opacity-50 cursor-not-allowed" disabled>Previous</button>
                     {% endif %}
                     <span class="text-gray-600">Page {{ logs_page.number }} of {{ logs_page.paginator.num_pages }}</span>
                     {% if logs_page.has_next %}
-                        <a href="?log_page={{ logs_page.next_page_number }}" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300">Next</a>
+                        <a href="?page={{ logs_page.next_page_number }}" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300">Next</a>
                     {% else %}
                         <button class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md opacity-50 cursor-not-allowed" disabled>Next</button>
                     {% endif %}
                 </div>
             </div>
+
+            <script>
+                function openLogModal(modalId) {
+                    document.getElementById(modalId).classList.remove('hidden');
+                }
+
+                function closeLogModal(modalId) {
+                    document.getElementById(modalId).classList.add('hidden');
+                }
+            </script>
         </div>
 </body>
 </html>

@@ -8,7 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 font-sans">
-    <div class="container mx-auto p-6">
+    <div class="container mx-auto p-6 pb-32 md:pb-6">
         <!-- Sticky Header -->
         <header class="bg-white shadow-lg rounded-lg p-6 mb-6 flex justify-between items-center sticky top-4 mx-2 z-50">
             <h1 class="text-2xl font-bold text-gray-800">Merchant Dashboard</h1>
@@ -233,9 +233,12 @@
                     document.getElementById(modalId).classList.add('hidden');
                 }
             </script>
+
+            
+            <!-- Activity Logs -->
             <!-- Activity Logs Card -->
             <div class="bg-white shadow rounded-lg p-6 md:col-span-2">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">Activity Logs</h2>
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Your Listings Activity Logs</h2>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -252,71 +255,144 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.action }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.comment }}</td>
                                 </tr>
-
                                 <!-- Detailed Modal for Log Entry -->
-                                <div id="log-modal-{{log.id}}" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+                                <div id="log-modal-{{log.id}}" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 overflow-y-auto">
                                     <div class="flex items-center justify-center min-h-screen p-4">
-                                        <div class="bg-white rounded-lg max-w-4xl w-full">
-                                            <div class="p-6">
-                                                <div class="flex justify-between items-center mb-4">
-                                                    <h2 class="text-2xl font-bold">Activity Log Details</h2>
+                                        <div class="bg-white rounded-lg w-full max-w-4xl my-8">
+                                            <!-- Modal Header - Sticky -->
+                                            <div class="sticky top-0 bg-white border-b border-gray-200 p-4 rounded-t-lg">
+                                                <div class="flex justify-between items-center">
+                                                    <h2 class="text-xl font-bold text-gray-800">Activity Log Details</h2>
                                                     <button onclick="closeLogModal('log-modal-{{log.id}}')" 
-                                                            class="text-gray-500 hover:text-gray-700">
-                                                        <i class="fas fa-times"></i>
+                                                            class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                                                        <i class="fas fa-times text-gray-500"></i>
                                                     </button>
                                                 </div>
-                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <!-- Log Details -->
-                                                    <div class="bg-gray-50 p-4 rounded-lg">
-                                                        <h3 class="text-lg font-semibold mb-3">Audit Information</h3>
-                                                        <div class="space-y-2">
-                                                            <p><span class="font-medium">Timestamp:</span> {{ log.timestamp|date:"Y-m-d H:i:s" }}</p>
-                                                            <p><span class="font-medium">Action:</span> <span class="px-2 py-1 rounded {% if log.action == 'approve' %}bg-green-100 text-green-800{% elif log.action == 'reject' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">{{ log.action }}</span></p>
-                                                            <p><span class="font-medium">Moderator:</span> {{ log.moderator.username }}</p>
-                                                            <p><span class="font-medium">Comment:</span> {{ log.comment }}</p>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <!-- Product Details -->
-                                                    <div class="bg-gray-50 p-4 rounded-lg">
-                                                        <h3 class="text-lg font-semibold mb-3">Product Information</h3>
-                                                        <div class="space-y-2">
-                                                            <p><span class="font-medium">Product:</span> {{ log.product_timeslot.product.name }}</p>
-                                                            <p><span class="font-medium">Original Price:</span> ${{ log.product_timeslot.product.original_price }}</p>
-                                                            <p><span class="font-medium">Discounted Price:</span> ${{ log.product_timeslot.product.discounted_price }}</p>
-                                                            <p><span class="font-medium">Discount:</span> {{ log.product_timeslot.product.percentage_discount }}%</p>
-                                                        </div>
-                                                    </div>
+                                                <!-- Tabs -->
+                                                <div class="flex space-x-4 mt-4 border-b">
+                                                    <button onclick="switchTab('{{log.id}}', 'audit')" 
+                                                            class="tab-button tab-{{log.id}}-audit px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600">
+                                                        <i class="fas fa-clipboard-list mr-2"></i>Audit Info
+                                                    </button>
+                                                    <button onclick="switchTab('{{log.id}}', 'product')"
+                                                            class="tab-button tab-{{log.id}}-product px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700">
+                                                        <i class="fas fa-box mr-2"></i>Product Details
+                                                    </button>
+                                                    <button onclick="switchTab('{{log.id}}', 'timeslot')"
+                                                            class="tab-button tab-{{log.id}}-timeslot px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700">
+                                                        <i class="fas fa-clock mr-2"></i>TimeSlot
+                                                    </button>
+                                                </div>
+                                            </div>
 
-                                                    <!-- TimeSlot Details -->
-                                                    <div class="bg-gray-50 p-4 rounded-lg">
-                                                        <h3 class="text-lg font-semibold mb-3">TimeSlot Information</h3>
-                                                        <div class="space-y-2">
-                                                            <p><span class="font-medium">Name:</span> {{ log.product_timeslot.timeslot.name }}</p>
-                                                            <p><span class="font-medium">Start Time:</span> {{ log.product_timeslot.timeslot.start_time|date:"Y-m-d H:i" }}</p>
-                                                            <p><span class="font-medium">End Time:</span> {{ log.product_timeslot.timeslot.end_time|date:"Y-m-d H:i" }}</p>
-                                                            <p><span class="font-medium">Status:</span> {{ log.product_timeslot.timeslot.status }}</p>
+                                            <!-- Modal Content - Scrollable -->
+                                            <div class="p-4 max-h-[calc(100vh-16rem)] overflow-y-auto">
+                                                <!-- Audit Tab -->
+                                                <div id="tab-{{log.id}}-audit" class="tab-content">
+                                                    <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                                                        <div class="grid grid-cols-2 gap-4">
+                                                            <p class="text-sm"><span class="font-medium">Timestamp:</span><br>
+                                                                {{ log.timestamp|date:"Y-m-d H:i:s" }}</p>
+                                                            <p class="text-sm"><span class="font-medium">Moderator:</span><br>
+                                                                {{ log.moderator.username }}</p>
+                                                            <p class="text-sm"><span class="font-medium">Action:</span><br>
+                                                                <span class="inline-block mt-1 px-3 py-1 rounded-full text-xs font-medium
+                                                                    {% if log.action == 'approve' %}bg-green-100 text-green-800
+                                                                    {% elif log.action == 'reject' %}bg-red-100 text-red-800
+                                                                    {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                                                    {{ log.action }}
+                                                                </span>
+                                                            </p>
+                                                            <p class="text-sm col-span-2"><span class="font-medium">Comment:</span><br>
+                                                                {{ log.comment|default:"No comment provided" }}</p>
                                                         </div>
                                                     </div>
+                                                </div>
 
-                                                    <!-- Product Images -->
-                                                    <div class="bg-gray-50 p-4 rounded-lg">
-                                                        <h3 class="text-lg font-semibold mb-3">Product Images</h3>
-                                                        <div class="flex space-x-2 overflow-x-auto">
-                                                            {% for image in log.product_timeslot.product.images.all %}
-                                                                <img src="{{ image.image.url }}" 
-                                                                     alt="Product image" 
-                                                                     class="h-32 w-32 object-cover rounded-lg">
-                                                            {% empty %}
-                                                                <p class="text-gray-500">No images available</p>
-                                                            {% endfor %}
+                                                <!-- Product Tab -->
+                                                <div id="tab-{{log.id}}-product" class="tab-content hidden">
+                                                    <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                                                        <div class="grid grid-cols-2 gap-4">
+                                                            <p class="text-sm"><span class="font-medium">Name:</span><br>
+                                                                {{ log.product_timeslot.product.name }}</p>
+                                                            <p class="text-sm"><span class="font-medium">Original Price:</span><br>
+                                                                Kshs {{ log.product_timeslot.product.original_price }}</p>
+                                                            <p class="text-sm"><span class="font-medium">Discounted Price:</span><br>
+                                                                Kshs {{ log.product_timeslot.product.discounted_price }}</p>
+                                                            <p class="text-sm"><span class="font-medium">Discount:</span><br>
+                                                                <span class="text-red-600">{{ log.product_timeslot.product.percentage_discount }}%</span></p>
+                                                                <div class="col-span-2">
+                                                                    <span class="font-medium text-sm">Product Image:</span><br>
+                                                                    <div class="flex justify-center mt-2">
+                                                                        {% if log.product_timeslot.product.images.first %}
+                                                                            <div class="relative w-full max-w-md">
+                                                                                <img src="{{ log.product_timeslot.product.images.first.image.url }}" 
+                                                                                    alt="{{ log.product_timeslot.product.name }}" 
+                                                                                    class="w-full h-48 object-cover rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                                                                                <div class="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent rounded-lg"></div>
+                                                                            </div>
+                                                                        {% else %}
+                                                                            <div class="w-full max-w-md h-48 bg-gray-100 rounded-lg flex items-center justify-center">
+                                                                                <p class="text-sm text-gray-500">No image available</p>
+                                                                            </div>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- TimeSlot Tab -->
+                                                <div id="tab-{{log.id}}-timeslot" class="tab-content hidden">
+                                                    <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                                                        <div class="grid grid-cols-2 gap-4">
+                                                            <p class="text-sm"><span class="font-medium">Name:</span><br>
+                                                                {{ log.product_timeslot.timeslot.name }}</p>
+                                                            <p class="text-sm"><span class="font-medium">Status:</span><br>
+                                                                <span class="inline-block mt-1 px-3 py-1 rounded-full text-xs font-medium
+                                                                    {% if log.product_timeslot.timeslot.status == 'active' %}bg-green-100 text-green-800
+                                                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                                    {{ log.product_timeslot.timeslot.status }}
+                                                                </span>
+                                                            </p>
+                                                            <p class="text-sm"><span class="font-medium">Start Time:</span><br>
+                                                                {{ log.product_timeslot.timeslot.start_time|date:"Y-m-d H:i" }}</p>
+                                                            <p class="text-sm"><span class="font-medium">End Time:</span><br>
+                                                                {{ log.product_timeslot.timeslot.end_time|date:"Y-m-d H:i" }}</p>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            <!-- Modal Footer - Sticky -->
+                                            <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 rounded-b-lg">
+                                                <button onclick="closeLogModal('log-modal-{{log.id}}')"
+                                                        class="w-full sm:w-auto px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md transition-colors">
+                                                    Close Details
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
+
                                 </div>
+
+                                <script>
+                                    function switchTab(logId, tabName) {
+                                        // Hide all tab contents
+                                        document.querySelectorAll(`[id^="tab-${logId}-"]`).forEach(tab => {
+                                            tab.classList.add('hidden');
+                                        });
+                                        // Show selected tab content
+                                        document.getElementById(`tab-${logId}-${tabName}`).classList.remove('hidden');
+                                        
+                                        // Update tab buttons
+                                        document.querySelectorAll(`[class^="tab-${logId}-"]`).forEach(button => {
+                                            button.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+                                            button.classList.add('text-gray-500');
+                                        });
+                                        document.querySelector(`.tab-${logId}-${tabName}`).classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+                                    }
+                                </script>
                             {% empty %}
                                 <tr>
                                     <td colspan="3" class="px-6 py-4 text-sm text-gray-500 text-center">No activity logs available.</td>
