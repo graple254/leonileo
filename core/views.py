@@ -459,7 +459,74 @@ def create_merchant_profile(request):
 @login_required
 @role_required("MODERATOR")
 def moderator_dashboard(request):
-    """
-    Moderator dashboard restricted to MODERATOR users only.
-    """
-    return render(request, "files/moderator/office.html")
+    moderator = request.user
+
+    # ✅ categories assigned to this moderator
+    categories = Category.objects.filter(
+        id__in=ModeratorCategory.objects.filter(moderator=moderator).values("category_id")
+    )
+
+    # ✅ products waiting moderation in slots (only in categories assigned to this mod)
+    pending_pts = ProductTimeSlot.objects.filter(
+        product__category__in=categories,
+        status="pending"
+    ).select_related("product", "timeslot", "product__merchant").prefetch_related("product__images")
+
+    # ✅ allow creating slots only if moderator has TSM category
+    can_create_slot = categories.filter(name__iexact="TSM").exists()
+
+    # ✅ audit log for this moderator
+    logs = AuditLog.objects.filter(moderator=moderator).order_by("-timestamp")[:20]
+
+    # ----------------------
+    # POST actions
+    # ----------------------
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        if action in ["approve", "reject", "remove"]:
+            pts_id = request.POST.get("pts_id")
+            comment = request.POST.get("comment", "")
+            pts = get_object_or_404(ProductTimeSlot, id=pts_id)
+
+            # ✅ only allow mods of that category to moderate
+            if pts.product.category not in categories:
+                messages.error(request, "You are not allowed to moderate this category.")
+                return redirect("moderator_dashboard")
+
+            if action == "approve":
+                pts.approve(moderator)
+                messages.success(request, f"{pts.product.name} approved for {pts.timeslot.name}")
+            elif action == "reject":
+                pts.reject(moderator, comment or "Rejected by moderator.")
+                messages.warning(request, f"{pts.product.name} rejected")
+            elif action == "remove":
+                pts.remove(moderator, comment or "Removed by moderator.")
+                messages.error(request, f"{pts.product.name} removed")
+
+        elif action == "create_slot" and can_create_slot:
+            try:
+                name = request.POST.get("name")
+                start_time = request.POST.get("start_time")
+                end_time = request.POST.get("end_time")
+
+                ts = TimeSlot.objects.create(
+                    name=name,
+                    start_time=start_time,
+                    end_time=end_time,
+                    created_by=moderator,
+                    status="waiting"
+                )
+                messages.success(request, f"TimeSlot '{ts.name}' created successfully!")
+            except Exception as e:
+                messages.error(request, f"Error creating timeslot: {e}")
+
+        return redirect("moderator_dashboard")
+
+    context = {
+        "categories": categories,
+        "pending_pts": pending_pts,
+        "can_create_slot": can_create_slot,
+        "logs": logs,
+    }
+    return render(request, "files/moderator/office.html", context)

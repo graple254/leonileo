@@ -3,179 +3,500 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bazaa - Moderator Office</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        .sidebar {
-            min-height: calc(100vh - 56px);
+    <title>Moderator Dashboard - Clearance System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
         }
-    </style>
+    </script>
 </head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-danger">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{% url 'moderator_dashboard' %}">Bazaa Moderator</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'moderator_dashboard' %}">Dashboard</a>
-                    </li>
-                </ul>
-                <div class="navbar-nav">
-                    <span class="nav-item nav-link text-light">
-                        <i class="bi bi-shield-check"></i> Moderator: {{ user.username }}
-                    </span>
-                    <a class="nav-link" href="{% url 'logout' %}">
-                        <i class="bi bi-box-arrow-right"></i> Logout
-                    </a>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-primary-500 text-white p-2 rounded-lg">
+                        <i class="fas fa-shield-alt text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">Moderator Office</h1>
+                        <p class="text-sm text-gray-500">Clearance Sales Management</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <p class="text-sm font-medium text-gray-900">{{ request.user.get_full_name|default:request.user.username }}</p>
+                        <p class="text-xs text-gray-500">Moderator</p>
+                    </div>
+                    <div class="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white font-semibold">
+                        {{ request.user.username|first|upper }}
+                    </div>
                 </div>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <!-- Messages -->
-    {% if messages %}
-        <div class="container-fluid mt-3">
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                        <i class="fas fa-clock text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Pending Reviews</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ pending_pts.count }}</p>
+                    </div>
                 </div>
-            {% endfor %}
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                        <i class="fas fa-tags text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Assigned Categories</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ categories.count }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
+                        <i class="fas fa-history text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Recent Actions</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ logs.count }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-orange-100 text-orange-600 mr-4">
+                        <i class="fas fa-calendar-plus text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Slot Creation</p>
+                        <p class="text-lg font-bold {% if can_create_slot %}text-green-600{% else %}text-gray-400{% endif %}">
+                            {% if can_create_slot %}Enabled{% else %}Disabled{% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
-    {% endif %}
 
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
-                <div class="position-sticky pt-3">
-                    <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="#">
-                                <i class="bi bi-house-door"></i>
-                                Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="bi bi-people"></i>
-                                Users
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="bi bi-shop"></i>
-                                Merchants
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="bi bi-flag"></i>
-                                Reports
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="bi bi-gear"></i>
-                                Settings
-                            </a>
-                        </li>
-                    </ul>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Content Column -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Pending Reviews Section -->
+                <div class="bg-white shadow rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-lg font-semibold text-gray-800">Pending Product Reviews</h2>
+                            <span class="bg-primary-100 text-primary-800 text-sm px-3 py-1 rounded-full">
+                                {{ pending_pts.count }} items
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        {% if pending_pts %}
+                            <div class="space-y-4">
+                                {% for pts in pending_pts %}
+                                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                    <div class="flex flex-col md:flex-row md:items-start gap-4">
+                                        <!-- Product Images -->
+                                        {% if pts.product.images.all %}
+                                        <div class="flex-shrink-0">
+                                            <div class="flex space-x-2 overflow-x-auto max-w-[200px]">
+                                                {% for image in pts.product.images.all|slice:":3" %}
+                                                <img src="{{ image.image.url }}" 
+                                                     alt="{{ pts.product.name }}" 
+                                                     class="w-16 h-16 object-cover rounded-lg border">
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <!-- Product Details -->
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                                                <div>
+                                                    <h3 class="font-semibold text-gray-900 text-lg">{{ pts.product.name }}</h3>
+                                                    <p class="text-sm text-gray-600 mt-1">
+                                                        by {{ pts.product.merchant.business_name }}
+                                                    </p>
+                                                    <div class="flex flex-wrap gap-2 mt-2">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                            {{ pts.product.category.name }}
+                                                        </span>
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                            {{ pts.timeslot.name }}
+                                                        </span>
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                            {{ pts.timeslot.start_time|date:"M d, H:i" }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Price Information -->
+                                                <div class="text-right">
+                                                    <div class="text-2xl font-bold text-green-600">
+                                                        Kshs {{ pts.product.discounted_price|default:pts.product.original_price }}
+                                                    </div>
+                                                    {% if pts.product.discounted_price %}
+                                                    <div class="text-sm text-gray-500 line-through">
+                                                        Kshs {{ pts.product.original_price }}
+                                                    </div>
+                                                    <div class="text-sm text-red-600 font-semibold">
+                                                        {{ pts.product.percentage_discount }}% OFF
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Action Buttons -->
+                                            <div class="mt-4 flex flex-wrap gap-2">
+                                                <form method="POST" class="inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="approve">
+                                                    <input type="hidden" name="pts_id" value="{{ pts.id }}">
+                                                    <button type="submit" 
+                                                            onclick="return confirm('Approve {{ pts.product.name }} for {{ pts.timeslot.name }}?')"
+                                                            class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors">
+                                                        <i class="fas fa-check mr-2"></i>
+                                                        Approve
+                                                    </button>
+                                                </form>
+                                                
+                                                <button onclick="openRejectModal('{{ pts.id }}', '{{ pts.product.name|escapejs }}')"
+                                                        class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition-colors">
+                                                    <i class="fas fa-times mr-2"></i>
+                                                    Reject
+                                                </button>
+                                                
+                                                <button onclick="openRemoveModal('{{ pts.id }}', '{{ pts.product.name|escapejs }}')"
+                                                        class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-md transition-colors">
+                                                    <i class="fas fa-trash mr-2"></i>
+                                                    Remove
+                                                </button>
+                                                
+                                                <button onclick="openProductModal('{{ pts.id }}')"
+                                                        class="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-md transition-colors">
+                                                    <i class="fas fa-eye mr-2"></i>
+                                                    Details
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-12">
+                                <div class="text-gray-400 text-6xl mb-4">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">All caught up!</h3>
+                                <p class="text-gray-500">No pending product reviews at the moment.</p>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
-            </nav>
 
-            <!-- Main Content -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Moderator Office</h1>
+                <!-- Recent Activity Logs -->
+                <div class="bg-white shadow rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-800">Recent Activity</h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            {% for log in logs %}
+                            <div class="flex items-start space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                <div class="flex-shrink-0">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center 
+                                        {% if log.action == 'approve' %}bg-green-100 text-green-600
+                                        {% elif log.action == 'reject' %}bg-red-100 text-red-600
+                                        {% elif log.action == 'remove' %}bg-gray-100 text-gray-600
+                                        {% else %}bg-blue-100 text-blue-600{% endif %}">
+                                        <i class="fas 
+                                            {% if log.action == 'approve' %}fa-check
+                                            {% elif log.action == 'reject' %}fa-times
+                                            {% elif log.action == 'remove' %}fa-trash
+                                            {% else %}fa-plus{% endif %}">
+                                        </i>
+                                    </div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm text-gray-900">
+                                        <span class="font-semibold">{{ log.action|title }}</span>
+                                        {% if log.product_timeslot %}
+                                        <span class="font-medium">{{ log.product_timeslot.product.name }}</span>
+                                        {% endif %}
+                                    </p>
+                                    <p class="text-sm text-gray-500 mt-1">{{ log.comment|default:"No comment provided" }}</p>
+                                    <p class="text-xs text-gray-400 mt-1">{{ log.timestamp|timesince }} ago</p>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="text-center py-8 text-gray-500">
+                                <i class="fas fa-history text-4xl mb-3 text-gray-300"></i>
+                                <p>No recent activity</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Column -->
+            <div class="space-y-8">
+                <!-- Assigned Categories -->
+                <div class="bg-white shadow rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-800">Your Categories</h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-3">
+                            {% for category in categories %}
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="font-medium text-gray-900">{{ category.name }}</span>
+                                <span class="text-xs bg-primary-100 text-primary-800 px-2 py-1 rounded-full">
+                                    {% with pending_count=pending_pts|dictsort:"product__category"|length %}
+                                        {{ pending_count }} pending
+                                    {% endwith %}
+                                </span>
+                            </div>
+                            {% empty %}
+                            <p class="text-gray-500 text-center py-4">No categories assigned</p>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Stats Overview -->
-                <div class="row g-4 mb-4">
-                    <div class="col-md-3">
-                        <div class="card text-white bg-primary">
-                            <div class="card-body">
-                                <h5 class="card-title">Total Users</h5>
-                                <p class="card-text display-6">0</p>
-                            </div>
-                        </div>
+                <!-- Create TimeSlot (if allowed) -->
+                {% if can_create_slot %}
+                <div class="bg-white shadow rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-800">Create Clearance Slot</h2>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card text-white bg-warning">
-                            <div class="card-body">
-                                <h5 class="card-title">Active Merchants</h5>
-                                <p class="card-text display-6">0</p>
+                    <div class="p-6">
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="create_slot">
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Slot Name</label>
+                                    <input type="text" name="name" required
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                           placeholder="e.g., Weekend Clearance">
+                                </div>
+                                
+                                <div class="grid grid-cols-1 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                                        <input type="datetime-local" name="start_time" required
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                                        <input type="datetime-local" name="end_time" required
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                    </div>
+                                </div>
+                                
+                                <button type="submit"
+                                        class="w-full bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-md transition-colors font-medium">
+                                    <i class="fas fa-calendar-plus mr-2"></i>
+                                    Create TimeSlot
+                                </button>
                             </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-white bg-danger">
-                            <div class="card-body">
-                                <h5 class="card-title">Pending Reports</h5>
-                                <p class="card-text display-6">0</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-white bg-success">
-                            <div class="card-body">
-                                <h5 class="card-title">Resolved Issues</h5>
-                                <p class="card-text display-6">0</p>
-                            </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
+                {% endif %}
 
-                <!-- Quick Actions -->
-                <div class="row mb-4">
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-header">
-                                Quick Actions
+                <!-- Quick Stats -->
+                <div class="bg-white shadow rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-800">Moderation Guide</h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4 text-sm text-gray-600">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <i class="fas fa-check text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">Approve</p>
+                                    <p>Product meets all requirements and can proceed to clearance sale</p>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <div class="d-grid gap-2 d-md-flex">
-                                    <button class="btn btn-primary">
-                                        <i class="bi bi-person-plus"></i> Add User
-                                    </button>
-                                    <button class="btn btn-warning">
-                                        <i class="bi bi-shop"></i> Review Merchants
-                                    </button>
-                                    <button class="btn btn-danger">
-                                        <i class="bi bi-flag"></i> View Reports
-                                    </button>
+                            
+                            <div class="flex items-start space-x-3">
+                                <div class="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <i class="fas fa-times text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">Reject</p>
+                                    <p>Product doesn't meet requirements but can be resubmitted</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start space-x-3">
+                                <div class="w-6 h-6 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <i class="fas fa-trash text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">Remove</p>
+                                    <p>Remove product from consideration entirely</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Recent Activity -->
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-header">
-                                Recent Activity
-                            </div>
-                            <div class="card-body">
-                                <p class="text-muted text-center">No recent activity to display.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
+            </div>
         </div>
     </div>
 
-    <!-- Bootstrap JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Reject Modal -->
+    <div id="reject-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 p-4">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="bg-white rounded-lg w-full max-w-md">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Reject Product</h3>
+                    <p class="text-sm text-gray-600 mb-4" id="reject-product-name"></p>
+                    
+                    <form method="POST" id="reject-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="reject">
+                        <input type="hidden" name="pts_id" id="reject-pts-id">
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Reason for Rejection</label>
+                            <textarea name="comment" rows="4" required
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                      placeholder="Please provide a reason for rejection..."></textarea>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" 
+                                    onclick="closeRejectModal()"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors">
+                                Confirm Rejection
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remove Modal -->
+    <div id="remove-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 p-4">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="bg-white rounded-lg w-full max-w-md">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Remove Product</h3>
+                    <p class="text-sm text-gray-600 mb-4" id="remove-product-name"></p>
+                    
+                    <form method="POST" id="remove-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="remove">
+                        <input type="hidden" name="pts_id" id="remove-pts-id">
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Reason for Removal</label>
+                            <textarea name="comment" rows="4" required
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                      placeholder="Please provide a reason for removal..."></textarea>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" 
+                                    onclick="closeRemoveModal()"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                    class="px-4 py-2 text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 rounded-md transition-colors">
+                                Confirm Removal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Reject Modal Functions
+        function openRejectModal(ptsId, productName) {
+            document.getElementById('reject-pts-id').value = ptsId;
+            document.getElementById('reject-product-name').textContent = `You are about to reject: "${productName}"`;
+            document.getElementById('reject-modal').classList.remove('hidden');
+        }
+
+        function closeRejectModal() {
+            document.getElementById('reject-modal').classList.add('hidden');
+        }
+
+        // Remove Modal Functions
+        function openRemoveModal(ptsId, productName) {
+            document.getElementById('remove-pts-id').value = ptsId;
+            document.getElementById('remove-product-name').textContent = `You are about to remove: "${productName}"`;
+            document.getElementById('remove-modal').classList.remove('hidden');
+        }
+
+        function closeRemoveModal() {
+            document.getElementById('remove-modal').classList.add('hidden');
+        }
+
+        // Close modals when clicking outside
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('fixed')) {
+                event.target.classList.add('hidden');
+            }
+        });
+
+        // Close modals with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                document.querySelectorAll('.fixed').forEach(modal => {
+                    modal.classList.add('hidden');
+                });
+            }
+        });
+
+        // Product details modal (simplified version)
+        function openProductModal(ptsId) {
+            // In a real implementation, this would show detailed product information
+            alert('Product details modal would open here for ID: ' + ptsId);
+        }
+    </script>
 </body>
 </html>
