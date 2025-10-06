@@ -468,210 +468,293 @@
                 </div>
             </div>
 
-            <!-- Clearance Periods Section -->
-            <div class="bg-white shadow rounded-lg p-6">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">Clearance Sales Schedule</h2>
-            
-                <!-- Upcoming Clearance Periods -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-medium text-gray-700 mb-3">Upcoming Clearance Periods</h3>
-                    <div class="flex space-x-4 overflow-x-auto pb-2">
-                        {% for timeslot in upcoming_slots %}
-                        <div class="flex-shrink-0 w-64 bg-gray-50 rounded-lg shadow cursor-pointer hover:bg-blue-50 transition"
-                            onclick="document.getElementById('timeslot-modal-{{ timeslot.id }}').classList.remove('hidden')">
+
+
+
+            <!-- ===================== -->
+            <!-- CLEARANCE MANAGEMENT -->
+            <!-- ===================== -->
+            <!-- ===================== -->
+            <!-- CLEARANCE MANAGEMENT -->
+            <!-- ===================== -->
+            <div class="bg-white shadow rounded-lg p-6 space-y-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Clearance Sales Schedule</h2>
+
+                <!-- 1️⃣ AVAILABLE (open for listing) -->
+                <section>
+                    <h3 class="text-lg font-medium text-gray-700 mb-3">Available Clearance Events</h3>
+                    <div class="flex space-x-4 overflow-x-auto pb-2 scrollbar-thin">
+                        {% for timeslot in available_slots %}
+                        <div class="flex-shrink-0 w-64 bg-blue-50 border border-blue-100 rounded-xl cursor-pointer hover:bg-blue-100 transition"
+                            onclick="document.getElementById('modal-available-{{ timeslot.id }}').classList.remove('hidden')">
                             <div class="p-4">
-                                <p class="font-semibold text-gray-800">{{ timeslot.name }}</p>
-                                <p class="text-sm text-gray-600">
+                                <p class="font-semibold">{{ timeslot.name }}</p>
+                                <p class="text-xs text-gray-600">
                                     {{ timeslot.start_time|date:"M d, H:i" }} - {{ timeslot.end_time|date:"H:i" }}
                                 </p>
-                                <span class="mt-2 inline-block text-xs px-2 py-1 rounded 
-                                            {% if timeslot.status == 'waiting' %}bg-yellow-100 text-yellow-800
-                                            {% elif timeslot.status == 'live' %}bg-green-100 text-green-800
-                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                    {{ timeslot.get_status_display }}
+                                <span class="inline-block mt-2 text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">
+                                    Open for Listing
                                 </span>
                             </div>
                         </div>
                         {% empty %}
-                        <p class="text-gray-500">No upcoming clearance periods.</p>
+                        <p class="text-gray-500">No open clearance events right now.</p>
                         {% endfor %}
                     </div>
-                </div>
-            
-            
-            
-                <!-- Current Clearance Slots -->
-                <!-- Current Slots (submitted products) -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-medium text-gray-700 mb-3">Active listings</h3>
-                    <div class="flex space-x-4 overflow-x-auto pb-2">
-                        {% for timeslot in current_slots %}
-                        <div class="flex-shrink-0 w-64 p-4 bg-blue-50 rounded-lg shadow cursor-pointer hover:bg-blue-100 transition"
-                            onclick="document.getElementById('current-modal-{{ timeslot.id }}').classList.remove('hidden')">
-                            <p class="font-semibold text-gray-800">{{ timeslot.name }}</p>
-                            <p class="text-sm text-gray-600">
-                                {{ timeslot.start_time|date:"M d, H:i" }} – {{ timeslot.end_time|date:"H:i" }}
-                            </p>
-                            <span class="mt-2 inline-block text-xs px-2 py-1 rounded 
-                                    {% if timeslot.status == 'waiting' %}bg-yellow-100 text-yellow-800
-                                    {% elif timeslot.status == 'live' %}bg-green-100 text-green-800
-                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                {{ timeslot.get_status_display }}
-                            </span>
+                </section>
+
+                <!-- 2️⃣ UPCOMING (joined, waiting to start) -->
+                <section>
+                    <h3 class="text-lg font-medium text-gray-700 mb-3">Upcoming Events</h3>
+                    <div class="flex space-x-4 overflow-x-auto pb-2 scrollbar-thin">
+                        {% for timeslot in upcoming_slots %}
+                        <div class="flex-shrink-0 w-64 bg-yellow-50 border border-yellow-100 rounded-xl cursor-pointer hover:bg-yellow-100 transition"
+                            onclick="document.getElementById('modal-upcoming-{{ timeslot.id }}').classList.remove('hidden')">
+                            <div class="p-4">
+                                <p class="font-semibold">{{ timeslot.name }}</p>
+                                <p class="text-xs text-gray-600">
+                                    {{ timeslot.start_time|date:"M d, H:i" }} - {{ timeslot.end_time|date:"H:i" }}
+                                </p>
+                                <span class="inline-block mt-2 text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800">
+                                    Scheduled
+                                </span>
+                            </div>
                         </div>
                         {% empty %}
-                        <p class="text-gray-500">You haven’t submitted products to any slots yet.</p>
+                        <p class="text-gray-500">No upcoming events you've joined.</p>
                         {% endfor %}
                     </div>
-                </div>
-            
-                <!-- Past Clearance History -->
-                <div>
-                    <h3 class="text-lg font-medium text-gray-700 mb-3">Past Clearance History</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {% for timeslot in history_slots %}
-                        <div class="p-4 bg-gray-100 rounded-lg shadow">
-                            <p class="font-semibold text-gray-800">{{ timeslot.name }}</p>
-                            <p class="text-sm text-gray-600">
-                                {{ timeslot.start_time|date:"M d, H:i" }} - {{ timeslot.end_time|date:"H:i" }}
-                            </p>
-                            <p class="text-sm text-gray-500">
-                                Products: {{ timeslot.product_timeslots.count }}
-                            </p>
-                            <span class="mt-2 inline-block text-xs px-2 py-1 rounded bg-gray-200 text-gray-700">
-                                Completed
-                            </span>
+                </section>
+
+                <!-- 3️⃣ LIVE -->
+                <section>
+                    <h3 class="text-lg font-medium text-gray-700 mb-3">Live Events</h3>
+                    <div class="flex space-x-4 overflow-x-auto pb-2 scrollbar-thin">
+                        {% for timeslot in live_slots %}
+                        <div class="flex-shrink-0 w-64 bg-green-50 border border-green-100 rounded-xl cursor-pointer hover:bg-green-100 transition"
+                            onclick="document.getElementById('modal-live-{{ timeslot.id }}').classList.remove('hidden')">
+                            <div class="p-4">
+                                <p class="font-semibold">{{ timeslot.name }}</p>
+                                <p class="text-xs text-gray-600">
+                                    {{ timeslot.start_time|date:"M d, H:i" }} – {{ timeslot.end_time|date:"H:i" }}
+                                </p>
+                                <span class="inline-block mt-2 text-xs px-2 py-1 rounded bg-green-200 text-green-800">
+                                    Live
+                                </span>
+                            </div>
                         </div>
                         {% empty %}
-                        <p class="text-gray-500">No past clearance history yet.</p>
+                        <p class="text-gray-500">No live events right now.</p>
                         {% endfor %}
                     </div>
-                </div>
-            
-            
-            
-            
+                </section>
+
+                <!-- 4️⃣ ENDED -->
+                <section>
+                    <h3 class="text-lg font-medium text-gray-700 mb-3">Past Events</h3>
+                    <div class="flex space-x-4 overflow-x-auto pb-2 scrollbar-thin">
+                        {% for timeslot in ended_slots %}
+                        <div class="flex-shrink-0 w-64 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-100 transition"
+                            onclick="document.getElementById('modal-ended-{{ timeslot.id }}').classList.remove('hidden')">
+                            <div class="p-4">
+                                <p class="font-semibold">{{ timeslot.name }}</p>
+                                <p class="text-xs text-gray-600">
+                                    {{ timeslot.start_time|date:"M d, H:i" }} - {{ timeslot.end_time|date:"H:i" }}
+                                </p>
+                                <span class="inline-block mt-2 text-xs px-2 py-1 rounded bg-gray-200 text-gray-700">
+                                    Ended
+                                </span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-gray-500">No past events found.</p>
+                        {% endfor %}
+                    </div>
+                </section>
             </div>
-            
-            <!-- Timeslot Modals (Assign Products) - One for each upcoming slot -->
-            {% for timeslot in upcoming_slots %}
-            <div id="timeslot-modal-{{ timeslot.id }}" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 p-4">
-                <div class="flex items-center justify-center min-h-screen">
-                    <div class="bg-white w-full max-w-lg rounded-lg shadow-lg p-6 max-h-[90vh] overflow-y-auto">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-xl font-semibold">List Products in Clearance</h2>
-                            <button onclick="document.getElementById('timeslot-modal-{{ timeslot.id }}').classList.add('hidden')"
-                                class="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100">
-                                <i class="fas fa-times"></i>
+
+
+            <!-- ===================== -->
+            <!-- MODALS FOR EACH STAGE -->
+            <!-- ===================== -->
+
+            <!-- ===================== -->
+            <!-- MODALS FOR EACH STAGE -->
+            <!-- ===================== -->
+
+            <!-- 1️⃣ AVAILABLE (Open for Listing) -->
+            {% for timeslot in available_slots %}
+            <div id="modal-available-{{ timeslot.id }}" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 p-4 flex items-center justify-center">
+                <div class="bg-white w-full max-w-2xl rounded-lg shadow-lg p-6 max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold">{{ timeslot.name }}</h2>
+                        <button onclick="document.getElementById('modal-available-{{ timeslot.id }}').classList.add('hidden')" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <p class="text-sm text-gray-600 mb-3">
+                        {{ timeslot.start_time|date:"M d, H:i" }} – {{ timeslot.end_time|date:"H:i" }}
+                    </p>
+                    <p class="text-xs text-gray-500 mb-4">Status: {{ timeslot.get_status_display }}</p>
+
+                    <form method="POST" action="{% url 'merchant_products' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="assign_timeslot">
+                        <input type="hidden" name="timeslot_id" value="{{ timeslot.id }}">
+
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Products to Add</label>
+                        <div class="border rounded-md divide-y divide-gray-100 max-h-60 overflow-y-auto">
+                            {% for product in products_page %}
+                            <label class="flex items-center space-x-2 p-2 hover:bg-blue-50 cursor-pointer">
+                                <input type="checkbox" name="product_ids" value="{{ product.id }}" class="form-checkbox text-blue-600">
+                                <span class="text-sm text-gray-700">{{ product.name }}</span>
+                            </label>
+                            {% empty %}
+                            <p class="text-gray-500 text-sm p-2">You have no available products to add.</p>
+                            {% endfor %}
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">You can select multiple products at once.</p>
+
+                        <div class="mt-6 flex justify-end space-x-3">
+                            <button type="button" onclick="document.getElementById('modal-available-{{ timeslot.id }}').classList.add('hidden')" class="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded">
+                                Cancel
+                            </button>
+                            <button type="submit" class="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded">
+                                Submit Selected
                             </button>
                         </div>
-            
-                        <div class="mb-4 p-3 bg-blue-50 rounded-lg">
-                            <p class="font-medium text-gray-800">{{ timeslot.name }}</p>
-                            <p class="text-sm text-gray-600">
-                                {{ timeslot.start_time|date:"M d, H:i" }} to {{ timeslot.end_time|date:"H:i" }}
-                            </p>
-                            <span class="inline-block mt-1 text-xs px-2 py-1 rounded 
-                                            {% if timeslot.status == 'waiting' %}bg-yellow-100 text-yellow-800
-                                            {% elif timeslot.status == 'live' %}bg-green-100 text-green-800
-                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                {{ timeslot.get_status_display }}
-                            </span>
-                        </div>
-            
-                        <form method="POST" action="{% url 'merchant_products' %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="assign_timeslot">
-                            <input type="hidden" name="timeslot_id" value="{{ timeslot.id }}">
-            
-                            <div class="space-y-4">
-                                <label class="block text-sm font-medium text-gray-700">Select Product</label>
-                                <select name="product_id"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <option value="">Choose a product...</option>
-                                    {% for product in products_page %}
-                                    <option value="{{ product.id }}">{{ product.name }}</option>
-                                    {% endfor %}
-                                </select>
-                                <p class="text-xs text-gray-500">Only your available products are listed</p>
-                            </div>
-            
-                            <div class="mt-6 flex justify-end space-x-3">
-                                <button type="button"
-                                    onclick="document.getElementById('timeslot-modal-{{ timeslot.id }}').classList.add('hidden')"
-                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors">
-                                    Cancel
-                                </button>
-                                <button type="submit"
-                                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors">
-                                    Submit Product
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                    </form>
                 </div>
             </div>
             {% endfor %}
-            
-            {% for timeslot in current_slots %}
-            <div id="current-modal-{{ timeslot.id }}"
-                class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-                <div class="bg-white rounded-lg shadow-lg max-w-lg w-full p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ timeslot.name }}</h3>
-                    <p class="text-sm text-gray-600 mb-4">
+
+            <!-- 2️⃣ UPCOMING (Joined but Not Yet Live) -->
+            {% for timeslot in upcoming_slots %}
+            <div id="modal-upcoming-{{ timeslot.id }}" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 p-4 flex items-center justify-center">
+                <div class="bg-white w-full max-w-lg rounded-lg shadow-lg p-6 max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold">{{ timeslot.name }}</h2>
+                        <button onclick="document.getElementById('modal-upcoming-{{ timeslot.id }}').classList.add('hidden')" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">
                         {{ timeslot.start_time|date:"M d, H:i" }} – {{ timeslot.end_time|date:"H:i" }}
                     </p>
-            
-                    <!-- List products in this slot -->
+                    <p class="text-xs text-gray-500 mb-4">Products submitted to this upcoming event</p>
+
                     <ul class="space-y-3 max-h-60 overflow-y-auto">
                         {% for pts in timeslot.products.all %}
                         <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
                             <div>
                                 <p class="font-medium">{{ pts.product.name }}</p>
-                                <p class="text-xs text-gray-500">Status: {{ pts.status }}</p>
+                                <p class="text-xs text-gray-500">Status: {{ pts.get_status_display }}</p>
                             </div>
-                            <!-- Withdraw action -->
                             <form method="POST" action="{% url 'merchant_products' %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="remove_from_timeslot">
                                 <input type="hidden" name="pts_id" value="{{ pts.id }}">
-                                <button class="text-red-600 hover:underline text-sm">Withdraw</button>
+                                <button class="text-red-600 hover:underline text-xs">Withdraw</button>
                             </form>
                         </li>
                         {% empty %}
-                        <p class="text-gray-500">No products submitted here yet.</p>
+                        <p class="text-gray-500">No products added to this event yet.</p>
                         {% endfor %}
                     </ul>
-            
-                    <!-- Close -->
+
                     <div class="mt-6 flex justify-end">
-                        <button onclick="document.getElementById('current-modal-{{ timeslot.id }}').classList.add('hidden')"
-                            class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded">
+                        <button onclick="document.getElementById('modal-upcoming-{{ timeslot.id }}').classList.add('hidden')" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded">
                             Close
                         </button>
                     </div>
                 </div>
             </div>
             {% endfor %}
-            
-            
-            <script>
-                // Close modals when clicking outside
-                document.addEventListener('click', function (event) {
-                    if (event.target.classList.contains('fixed')) {
-                        event.target.classList.add('hidden');
-                    }
-                });
 
-                // Close modals with Escape key
-                document.addEventListener('keydown', function (event) {
-                    if (event.key === 'Escape') {
-                        document.querySelectorAll('.fixed').forEach(modal => {
-                            modal.classList.add('hidden');
-                        });
-                    }
+            <!-- 3️⃣ LIVE -->
+            {% for timeslot in live_slots %}
+            <div id="modal-live-{{ timeslot.id }}" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 p-4 flex items-center justify-center">
+                <div class="bg-white w-full max-w-lg rounded-lg shadow-lg p-6 max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold">{{ timeslot.name }}</h2>
+                        <button onclick="document.getElementById('modal-live-{{ timeslot.id }}').classList.add('hidden')" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">
+                        {{ timeslot.start_time|date:"M d, H:i" }} – {{ timeslot.end_time|date:"H:i" }}
+                    </p>
+                    <p class="text-xs text-gray-500 mb-4">Your live products in this clearance sale</p>
+
+                    <ul class="space-y-3 max-h-60 overflow-y-auto">
+                        {% for pts in timeslot.products.all %}
+                        <li class="flex justify-between items-center p-2 bg-green-50 rounded">
+                            <p class="font-medium">{{ pts.product.name }}</p>
+                            <span class="text-xs text-green-700">{{ pts.get_status_display }}</span>
+                        </li>
+                        {% empty %}
+                        <p class="text-gray-500">You have no live products right now.</p>
+                        {% endfor %}
+                    </ul>
+
+                    <div class="mt-6 flex justify-end">
+                        <button onclick="document.getElementById('modal-live-{{ timeslot.id }}').classList.add('hidden')" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- 4️⃣ ENDED -->
+            {% for timeslot in ended_slots %}
+            <div id="modal-ended-{{ timeslot.id }}" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 p-4 flex items-center justify-center">
+                <div class="bg-white w-full max-w-lg rounded-lg shadow-lg p-6 max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold">{{ timeslot.name }}</h2>
+                        <button onclick="document.getElementById('modal-ended-{{ timeslot.id }}').classList.add('hidden')" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">
+                        {{ timeslot.start_time|date:"M d, H:i" }} – {{ timeslot.end_time|date:"H:i" }}
+                    </p>
+                    <p class="text-xs text-gray-500 mb-4">Finalized product performance</p>
+
+                    <ul class="space-y-3 max-h-60 overflow-y-auto">
+                        {% for pts in timeslot.products.all %}
+                        <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                            <p class="font-medium">{{ pts.product.name }}</p>
+                            <span class="text-xs text-gray-600">{{ pts.get_status_display }}</span>
+                        </li>
+                        {% empty %}
+                        <p class="text-gray-500">No products were listed in this event.</p>
+                        {% endfor %}
+                    </ul>
+
+                    <div class="mt-6 flex justify-end">
+                        <button onclick="document.getElementById('modal-ended-{{ timeslot.id }}').classList.add('hidden')" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Universal modal closing behavior -->
+            <script>
+                document.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('fixed')) e.target.classList.add('hidden');
+                });
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') document.querySelectorAll('.fixed').forEach(m => m.classList.add('hidden'));
                 });
             </script>
+
+
+
+
 
             <!-- Activity Logs -->
             <!-- Activity Logs Card -->

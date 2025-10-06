@@ -103,10 +103,26 @@ class ModeratorCategory(models.Model):
 # ------------------------------
 # TimeSlots for clearance sales
 # ------------------------------
+
+
+
+class TimeSlotManager(models.Manager):
+    def auto_refresh_statuses(self):
+        """Bulk update all timeslot statuses."""
+        updated = 0
+        for slot in self.all():
+            old_status = slot.status
+            slot.update_status()
+            if slot.status != old_status:
+                updated += 1
+        return updated
+
+
 class TimeSlot(models.Model):
     STATUS_CHOICES = [
         ("waiting", "Waiting"),
         ("live", "Live"),
+        ("ended", "Ended"),
     ]
 
     name = models.CharField(max_length=100, unique=True)
@@ -122,8 +138,41 @@ class TimeSlot(models.Model):
         related_name="created_timeslots"
     )
 
+    objects = TimeSlotManager()
+
     def __str__(self):
         return f"{self.name} ({self.status})"
+
+    # -------------------------
+    # Clean lifecycle logic
+    # -------------------------
+    def update_status(self):
+        now = timezone.now()
+        approved_count = self.products.filter(status="approved").count()
+        new_status = self.status  # start with current status
+
+        # CASE 1️⃣: Slot already ended
+        if now >= self.end_time:
+            new_status = "ended"
+
+        # CASE 2️⃣: Slot should go live (start_time reached and enough products)
+        elif self.status == "waiting" and now >= self.start_time and approved_count >= 4:
+            new_status = "live"
+
+        # CASE 3️⃣: Slot missed its start (not enough products)
+        elif self.status == "waiting" and now >= self.start_time and approved_count < 4:
+            new_status = "ended"
+
+        # CASE 4️⃣: Live slot that should end
+        elif self.status == "live" and now >= self.end_time:
+            new_status = "ended"
+
+        # Save only if changed
+        if new_status != self.status:
+            self.status = new_status
+            self.save(update_fields=["status"])
+
+        return self.status
 
 
 # ------------------------------
@@ -171,6 +220,8 @@ class ProductImage(models.Model):
         return f"Image for {self.product.name}"
 
 
+from django.core.exceptions import ValidationError
+
 # ------------------------------
 # Product-TimeSlot Relationship
 # ------------------------------
@@ -193,6 +244,19 @@ class ProductTimeSlot(models.Model):
 
     def __str__(self):
         return f"{self.product.name} in {self.timeslot.name} ({self.status})"
+
+    # --------------------------
+    # Validation rules
+    # --------------------------
+    def clean(self):
+        """Ensure only 'waiting' timeslots can accept new products."""
+        if self.timeslot.status not in ["waiting"]:
+            raise ValidationError("You can only add or modify products in 'waiting' timeslots.")
+
+    def save(self, *args, **kwargs):
+        # Enforce clean() validation every time it’s saved
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     # --------------------------
     # Moderator actions
@@ -323,6 +387,13 @@ def log_status_change(sender, instance, created, **kwargs):
             )
 
 
+# ------------------------------
+# Auto-activate or end timeslots dynamically
+# ------------------------------
+@receiver(post_save, sender=ProductTimeSlot)
+def auto_activate_timeslot(sender, instance, **kwargs):
+    """Update timeslot status automatically when product status changes."""
+    instance.timeslot.update_status()
 
 
 # WE need to have original and sale price for products

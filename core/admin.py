@@ -65,6 +65,19 @@ class TimeSlotAdmin(admin.ModelAdmin):
     list_filter = ("status", "start_time", "end_time")
     search_fields = ("name",)
     ordering = ("-start_time",)
+    readonly_fields = ("status",)
+    actions = ["refresh_selected_slots"]
+
+
+    @admin.action(description="🔄 Refresh status of selected time slots")
+    def refresh_selected_slots(self, request, queryset):
+        updated = 0
+        for slot in queryset:
+            prev_status = slot.status
+            slot.update_status()
+            if slot.status != prev_status:
+                updated += 1
+        self.message_user(request, f"Updated {updated} slots successfully!")
 
 
 # --------------------------
