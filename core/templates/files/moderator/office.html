@@ -4,375 +4,428 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Moderator Dashboard - Clearance System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#eff6ff',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                        }
-                    }
-                }
-            }
+    <style>
+        body {
+            background-color: #f8f9fa;
         }
-    </script>
+        .card {
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+        .nav-tabs .nav-link {
+            font-weight: 500;
+            padding: 1rem 1.5rem;
+        }
+        .nav-tabs .nav-link.active {
+            border-bottom-color: #0d6efd !important;
+        }
+        .accordion-button {
+            font-weight: 500;
+        }
+        .list-group-item {
+            border-left: 4px solid transparent;
+            transition: border-color 0.2s;
+        }
+        .list-group-item:hover {
+            border-left-color: #0d6efd;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
+        }
+    </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Header -->
-    <header class="bg-white shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <div class="flex items-center space-x-3">
-                    <div class="bg-primary-500 text-white p-2 rounded-lg">
-                        <i class="fas fa-shield-alt text-xl"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-xl font-bold text-gray-900">Moderator Office</h1>
-                        <p class="text-sm text-gray-500">Clearance Sales Management</p>
-                    </div>
+<body>
+    <!-- Header Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <div class="d-flex align-items-center">
+                <div class="bg-primary text-white p-2 rounded me-3">
+                    <i class="fas fa-shield-alt fs-4"></i>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <div class="text-right">
-                        <p class="text-sm font-medium text-gray-900">{{ request.user.get_full_name|default:request.user.username }}</p>
-                        <p class="text-xs text-gray-500">Moderator</p>
-                    </div>
-                    <div class="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white font-semibold">
-                        {{ request.user.username|first|upper }}
-                    </div>
+                <div>
+                    <h1 class="navbar-brand mb-0 h5">Moderator Office</h1>
+                    <p class="text-muted small mb-0">Clearance Sales Management</p>
+                </div>
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="text-end me-3">
+                    <p class="mb-0 fw-medium">{{ request.user.get_full_name|default:request.user.username }}</p>
+                    <p class="text-muted small mb-0">Moderator</p>
+                </div>
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px;">
+                    {{ request.user.username|first|upper }}
                 </div>
             </div>
         </div>
-    </header>
+    </nav>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Django Messages -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="container py-5">
         <!-- Stats Overview -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
-                        <i class="fas fa-clock text-xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Pending Reviews</p>
-                        <p class="text-2xl font-bold text-gray-900">{{ pending_pts.count }}</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
-                        <i class="fas fa-tags text-xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Assigned Categories</p>
-                        <p class="text-2xl font-bold text-gray-900">{{ categories.count }}</p>
+        <div class="row g-4 mb-5">
+            <div class="col-md-3">
+                <div class="card stat-card shadow border-0 h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="fas fa-clock fs-3 text-primary me-3"></i>
+                        <div>
+                            <p class="text-muted small mb-1">Pending Reviews</p>
+                            <h4 class="mb-0">{{ pending_pts.paginator.count }}</h4>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
-                        <i class="fas fa-history text-xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Recent Actions</p>
-                        <p class="text-2xl font-bold text-gray-900">{{ logs.count }}</p>
+            <div class="col-md-3">
+                <div class="card stat-card shadow border-0 h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="fas fa-tags fs-3 text-success me-3"></i>
+                        <div>
+                            <p class="text-muted small mb-1">Assigned Categories</p>
+                            <h4 class="mb-0">{{ categories.count }}</h4>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-orange-100 text-orange-600 mr-4">
-                        <i class="fas fa-calendar-plus text-xl"></i>
+            <div class="col-md-3">
+                <div class="card stat-card shadow border-0 h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="fas fa-check-circle fs-3 text-info me-3"></i>
+                        <div>
+                            <p class="text-muted small mb-1">Products Moderated</p>
+                            <h4 class="mb-0">{{ total_products_moderated }}</h4>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Slot Creation</p>
-                        <p class="text-lg font-bold {% if can_create_slot %}text-green-600{% else %}text-gray-400{% endif %}">
-                            {% if can_create_slot %}Enabled{% else %}Disabled{% endif %}
-                        </p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card shadow border-0 h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="fas fa-calendar fs-3 text-warning me-3"></i>
+                        <div>
+                            <p class="text-muted small mb-1">My TimeSlots</p>
+                            <h4 class="mb-0">{{ total_slots }}</h4>
+                            <p class="text-muted small mb-0">(Live: {{ live_slots }} | Ended: {{ ended_slots }})</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Main Content Column -->
-            <div class="lg:col-span-2 space-y-8">
-                <!-- Pending Reviews Section -->
-                <div class="bg-white shadow rounded-lg">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <div class="flex justify-between items-center">
-                            <h2 class="text-lg font-semibold text-gray-800">Pending Product Reviews</h2>
-                            <span class="bg-primary-100 text-primary-800 text-sm px-3 py-1 rounded-full">
-                                {{ pending_pts.count }} items
-                            </span>
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        {% if pending_pts %}
-                            <div class="space-y-4">
-                                {% for pts in pending_pts %}
-                                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                                    <div class="flex flex-col md:flex-row md:items-start gap-4">
-                                        <!-- Product Images -->
-                                        {% if pts.product.images.all %}
-                                        <div class="flex-shrink-0">
-                                            <div class="flex space-x-2 overflow-x-auto max-w-[200px]">
-                                                {% for image in pts.product.images.all|slice:":3" %}
-                                                <img src="{{ image.image.url }}" 
-                                                     alt="{{ pts.product.name }}" 
-                                                     class="w-16 h-16 object-cover rounded-lg border">
-                                                {% endfor %}
-                                            </div>
+        <div class="row g-4">
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <ul class="nav nav-tabs" id="modTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending-tab-content" type="button" role="tab" aria-controls="pending-tab-content" aria-selected="true">
+                            Pending Reviews <span class="badge bg-primary ms-1">{{ pending_pts.paginator.count }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="timeslots-tab" data-bs-toggle="tab" data-bs-target="#timeslots-tab-content" type="button" role="tab" aria-controls="timeslots-tab-content" aria-selected="false">
+                            My TimeSlots <span class="badge bg-primary ms-1">{{ total_slots }}</span>
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content border border-top-0 bg-white p-4 rounded-bottom shadow">
+                    <!-- Pending Tab -->
+                    <div class="tab-pane fade show active" id="pending-tab-content" role="tabpanel" aria-labelledby="pending-tab">
+                        {% if pending_pts.object_list %}
+                        <div class="accordion accordion-flush" id="pendingAccordion">
+                            {% for pts in pending_pts.object_list %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="pendingHeading{{ pts.id }}">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#pendingCollapse{{ pts.id }}" aria-expanded="false" aria-controls="pendingCollapse{{ pts.id }}">
+                                        <div class="d-flex align-items-center w-100">
+                                            <span>{{ pts.product.name }} - {{ pts.timeslot.name }}</span>
+                                            <span class="badge bg-warning text-dark ms-auto">Pending</span>
                                         </div>
-                                        {% endif %}
-                                        
-                                        <!-- Product Details -->
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-                                                <div>
-                                                    <h3 class="font-semibold text-gray-900 text-lg">{{ pts.product.name }}</h3>
-                                                    <p class="text-sm text-gray-600 mt-1">
-                                                        by {{ pts.product.merchant.business_name }}
-                                                    </p>
-                                                    <div class="flex flex-wrap gap-2 mt-2">
-                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                            {{ pts.product.category.name }}
-                                                        </span>
-                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                            {{ pts.timeslot.name }}
-                                                        </span>
-                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                            {{ pts.timeslot.start_time|date:"M d, H:i" }}
-                                                        </span>
-                                                    </div>
+                                    </button>
+                                </h2>
+                                <div id="pendingCollapse{{ pts.id }}" class="accordion-collapse collapse" aria-labelledby="pendingHeading{{ pts.id }}">
+                                    <div class="accordion-body">
+                                        <div class="row g-3">
+                                            {% if pts.product.images.all %}
+                                            <div class="col-md-4">
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    {% for image in pts.product.images.all|slice:":3" %}
+                                                    <img src="{{ image.image.url }}" alt="{{ pts.product.name }}" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                                                    {% endfor %}
                                                 </div>
-                                                
-                                                <!-- Price Information -->
-                                                <div class="text-right">
-                                                    <div class="text-2xl font-bold text-green-600">
-                                                        Kshs {{ pts.product.discounted_price|default:pts.product.original_price }}
-                                                    </div>
+                                            </div>
+                                            {% endif %}
+                                            <div class="col">
+                                                <h5 class="mb-2">{{ pts.product.name }}</h5>
+                                                <p class="text-muted small mb-1">By {{ pts.product.merchant.business_name }} | Category: {{ pts.product.category.name }}</p>
+                                                <p class="mb-3">
+                                                    <strong class="text-success">Kshs {{ pts.product.discounted_price|default:pts.product.original_price }}</strong>
                                                     {% if pts.product.discounted_price %}
-                                                    <div class="text-sm text-gray-500 line-through">
-                                                        Kshs {{ pts.product.original_price }}
-                                                    </div>
-                                                    <div class="text-sm text-red-600 font-semibold">
-                                                        {{ pts.product.percentage_discount }}% OFF
-                                                    </div>
+                                                    <del class="text-muted ms-2">Kshs {{ pts.product.original_price }}</del>
+                                                    <span class="badge bg-danger ms-2">{{ pts.product.percentage_discount }}% OFF</span>
                                                     {% endif %}
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Action Buttons -->
-                                            <div class="mt-4 flex flex-wrap gap-2">
-                                                <form method="POST" class="inline">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="action" value="approve">
-                                                    <input type="hidden" name="pts_id" value="{{ pts.id }}">
-                                                    <button type="submit" 
-                                                            onclick="return confirm('Approve {{ pts.product.name }} for {{ pts.timeslot.name }}?')"
-                                                            class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors">
-                                                        <i class="fas fa-check mr-2"></i>
-                                                        Approve
+                                                </p>
+                                                <div class="d-flex gap-2 flex-wrap">
+                                                    <form method="POST" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="action" value="approve">
+                                                        <input type="hidden" name="pts_id" value="{{ pts.id }}">
+                                                        <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Approve {{ pts.product.name }} for {{ pts.timeslot.name }}?')">
+                                                            <i class="fas fa-check me-1"></i>Approve
+                                                        </button>
+                                                    </form>
+                                                    <button type="button" class="btn btn-danger btn-sm" onclick="openRejectModal('{{ pts.id }}', '{{ pts.product.name|escapejs }}')">
+                                                        <i class="fas fa-times me-1"></i>Reject
                                                     </button>
-                                                </form>
-                                                
-                                                <button onclick="openRejectModal('{{ pts.id }}', '{{ pts.product.name|escapejs }}')"
-                                                        class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition-colors">
-                                                    <i class="fas fa-times mr-2"></i>
-                                                    Reject
-                                                </button>
-                                                
-                                                <button onclick="openRemoveModal('{{ pts.id }}', '{{ pts.product.name|escapejs }}')"
-                                                        class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-md transition-colors">
-                                                    <i class="fas fa-trash mr-2"></i>
-                                                    Remove
-                                                </button>
-                                                
-                                                <button onclick="openProductModal('{{ pts.id }}')"
-                                                        class="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-md transition-colors">
-                                                    <i class="fas fa-eye mr-2"></i>
-                                                    Details
-                                                </button>
+                                                    <button type="button" class="btn btn-secondary btn-sm" onclick="openRemoveModal('{{ pts.id }}', '{{ pts.product.name|escapejs }}')">
+                                                        <i class="fas fa-trash me-1"></i>Remove
+                                                    </button>
+                                                    <button type="button" class="btn btn-info btn-sm" onclick="openProductModal('{{ pts.id }}')">
+                                                        <i class="fas fa-eye me-1"></i>Details
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <div class="text-center py-12">
-                                <div class="text-gray-400 text-6xl mb-4">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-2">All caught up!</h3>
-                                <p class="text-gray-500">No pending product reviews at the moment.</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Recent Activity Logs -->
-                <div class="bg-white shadow rounded-lg">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-800">Recent Activity</h2>
-                    </div>
-                    <div class="p-6">
-                        <div class="space-y-4">
-                            {% for log in logs %}
-                            <div class="flex items-start space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                <div class="flex-shrink-0">
-                                    <div class="w-10 h-10 rounded-full flex items-center justify-center 
-                                        {% if log.action == 'approve' %}bg-green-100 text-green-600
-                                        {% elif log.action == 'reject' %}bg-red-100 text-red-600
-                                        {% elif log.action == 'remove' %}bg-gray-100 text-gray-600
-                                        {% else %}bg-blue-100 text-blue-600{% endif %}">
-                                        <i class="fas 
-                                            {% if log.action == 'approve' %}fa-check
-                                            {% elif log.action == 'reject' %}fa-times
-                                            {% elif log.action == 'remove' %}fa-trash
-                                            {% else %}fa-plus{% endif %}">
-                                        </i>
-                                    </div>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm text-gray-900">
-                                        <span class="font-semibold">{{ log.action|title }}</span>
-                                        {% if log.product_timeslot %}
-                                        <span class="font-medium">{{ log.product_timeslot.product.name }}</span>
-                                        {% endif %}
-                                    </p>
-                                    <p class="text-sm text-gray-500 mt-1">{{ log.comment|default:"No comment provided" }}</p>
-                                    <p class="text-xs text-gray-400 mt-1">{{ log.timestamp|timesince }} ago</p>
-                                </div>
-                            </div>
-                            {% empty %}
-                            <div class="text-center py-8 text-gray-500">
-                                <i class="fas fa-history text-4xl mb-3 text-gray-300"></i>
-                                <p>No recent activity</p>
                             </div>
                             {% endfor %}
                         </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-check-circle text-success fs-1 mb-3"></i>
+                            <h5>All caught up!</h5>
+                            <p class="text-muted">No pending product reviews at the moment.</p>
+                        </div>
+                        {% endif %}
+                        <!-- Pending Pagination -->
+                        <nav class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if pending_pts.has_previous %}
+                                <li class="page-item"><a class="page-link" href="?pending_page=1&logs_page={{ logs.number }}&timeslot_page={{ timeslots.number }}">First</a></li>
+                                <li class="page-item"><a class="page-link" href="?pending_page={{ pending_pts.previous_page_number }}&logs_page={{ logs.number }}&timeslot_page={{ timeslots.number }}">Previous</a></li>
+                                {% endif %}
+                                <li class="page-item disabled"><a class="page-link">Page {{ pending_pts.number }} of {{ pending_pts.paginator.num_pages }}</a></li>
+                                {% if pending_pts.has_next %}
+                                <li class="page-item"><a class="page-link" href="?pending_page={{ pending_pts.next_page_number }}&logs_page={{ logs.number }}&timeslot_page={{ timeslots.number }}">Next</a></li>
+                                <li class="page-item"><a class="page-link" href="?pending_page={{ pending_pts.paginator.num_pages }}&logs_page={{ logs.number }}&timeslot_page={{ timeslots.number }}">Last</a></li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    <!-- TimeSlots Tab -->
+                    <div class="tab-pane fade" id="timeslots-tab-content" role="tabpanel" aria-labelledby="timeslots-tab">
+                        {% if timeslots.object_list %}
+                        <div class="accordion accordion-flush" id="timeslotsAccordion">
+                            {% for ts in timeslots.object_list %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="tsHeading{{ ts.id }}">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tsCollapse{{ ts.id }}" aria-expanded="false" aria-controls="tsCollapse{{ ts.id }}">
+                                        <div class="d-flex align-items-center w-100">
+                                            <span>{{ ts.name }} ({{ ts.start_time|date:"M d, Y H:i" }} - {{ ts.end_time|date:"M d, Y H:i" }})</span>
+                                            <span class="badge ms-auto {% if ts.status == 'live' %}bg-success{% elif ts.status == 'ended' %}bg-danger{% else %}bg-secondary{% endif %}">{{ ts.status|capfirst }}</span>
+                                        </div>
+                                    </button>
+                                </h2>
+                                <div id="tsCollapse{{ ts.id }}" class="accordion-collapse collapse" aria-labelledby="tsHeading{{ ts.id }}">
+                                    <div class="accordion-body">
+                                        {% if ts.products.all %}
+                                        <div class="row g-3">
+                                            {% for pts in ts.products.all %}
+                                            <div class="col-md-6">
+                                                <div class="card h-100 shadow-sm border-0">
+                                                    {% if pts.product.images.first %}
+                                                    <img src="{{ pts.product.images.first.image.url }}" class="card-img-top" alt="{{ pts.product.name }}" style="height: 150px; object-fit: cover;">
+                                                    {% endif %}
+                                                    <div class="card-body">
+                                                        <h6 class="card-title">{{ pts.product.name }}</h6>
+                                                        <p class="text-muted small mb-2">By {{ pts.product.merchant.business_name }}</p>
+                                                        <p class="mb-2">
+                                                            <strong class="text-success">Kshs {{ pts.product.discounted_price|default:pts.product.original_price }}</strong>
+                                                            {% if pts.product.discounted_price %}
+                                                            <del class="text-muted ms-2">Kshs {{ pts.product.original_price }}</del>
+                                                            <span class="badge bg-danger ms-2">{{ pts.product.percentage_discount }}% OFF</span>
+                                                            {% endif %}
+                                                        </p>
+                                                        <span class="badge {% if pts.status == 'approved' %}bg-success{% elif pts.status == 'rejected' %}bg-danger{% elif pts.status == 'removed' %}bg-secondary{% else %}bg-warning text-dark{% endif %}">{{ pts.status|capfirst }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        {% else %}
+                                        <p class="text-muted text-center py-3">No products assigned to this TimeSlot yet.</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-calendar-times text-warning fs-1 mb-3"></i>
+                            <h5>No TimeSlots</h5>
+                            <p class="text-muted">You haven't created any TimeSlots yet.</p>
+                        </div>
+                        {% endif %}
+                        <!-- TimeSlots Pagination -->
+                        <nav class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if timeslots.has_previous %}
+                                <li class="page-item"><a class="page-link" href="?timeslot_page=1&pending_page={{ pending_pts.number }}&logs_page={{ logs.number }}">First</a></li>
+                                <li class="page-item"><a class="page-link" href="?timeslot_page={{ timeslots.previous_page_number }}&pending_page={{ pending_pts.number }}&logs_page={{ logs.number }}">Previous</a></li>
+                                {% endif %}
+                                <li class="page-item disabled"><a class="page-link">Page {{ timeslots.number }} of {{ timeslots.paginator.num_pages }}</a></li>
+                                {% if timeslots.has_next %}
+                                <li class="page-item"><a class="page-link" href="?timeslot_page={{ timeslots.next_page_number }}&pending_page={{ pending_pts.number }}&logs_page={{ logs.number }}">Next</a></li>
+                                <li class="page-item"><a class="page-link" href="?timeslot_page={{ timeslots.paginator.num_pages }}&pending_page={{ pending_pts.number }}&logs_page={{ logs.number }}">Last</a></li>
+                                {% endif %}
+                            </ul>
+                        </nav>
                     </div>
                 </div>
             </div>
 
-            <!-- Sidebar Column -->
-            <div class="space-y-8">
+            <!-- Sidebar -->
+            <div class="col-lg-4">
                 <!-- Assigned Categories -->
-                <div class="bg-white shadow rounded-lg">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-800">Your Categories</h2>
-                    </div>
-                    <div class="p-6">
-                        <div class="space-y-3">
-                            {% for category in categories %}
-                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                <span class="font-medium text-gray-900">{{ category.name }}</span>
-                                <span class="text-xs bg-primary-100 text-primary-800 px-2 py-1 rounded-full">
-                                    {% with pending_count=pending_pts|dictsort:"product__category"|length %}
-                                        {{ pending_count }} pending
-                                    {% endwith %}
-                                </span>
-                            </div>
-                            {% empty %}
-                            <p class="text-gray-500 text-center py-4">No categories assigned</p>
-                            {% endfor %}
-                        </div>
-                    </div>
+                <div class="card shadow border-0 mb-4">
+                    <div class="card-header bg-transparent fw-bold">Assigned Categories</div>
+                    <ul class="list-group list-group-flush">
+                        {% for category in categories %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ category.name }}
+                            <span class="badge bg-primary rounded-pill">Active</span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-muted">No categories assigned</li>
+                        {% endfor %}
+                    </ul>
                 </div>
 
-                <!-- Create TimeSlot (if allowed) -->
+                <!-- Create TimeSlot -->
                 {% if can_create_slot %}
-                <div class="bg-white shadow rounded-lg">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-800">Create Clearance Slot</h2>
-                    </div>
-                    <div class="p-6">
+                <div class="card shadow border-0 mb-4">
+                    <div class="card-header bg-transparent fw-bold">Create Clearance Slot</div>
+                    <div class="card-body">
                         <form method="POST">
                             {% csrf_token %}
                             <input type="hidden" name="action" value="create_slot">
-                            
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Slot Name</label>
-                                    <input type="text" name="name" required
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                           placeholder="e.g., Weekend Clearance">
-                                </div>
-                                
-                                <div class="grid grid-cols-1 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                                        <input type="datetime-local" name="start_time" required
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                                    </div>
-                                    
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                                        <input type="datetime-local" name="end_time" required
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                                    </div>
-                                </div>
-                                
-                                <button type="submit"
-                                        class="w-full bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-md transition-colors font-medium">
-                                    <i class="fas fa-calendar-plus mr-2"></i>
-                                    Create TimeSlot
-                                </button>
+                            <div class="mb-3">
+                                <label for="slotName" class="form-label small">Slot Name</label>
+                                <input type="text" class="form-control" id="slotName" name="name" placeholder="e.g., Weekend Clearance" required>
                             </div>
+                            <div class="mb-3">
+                                <label for="startTime" class="form-label small">Start Time</label>
+                                <input type="datetime-local" class="form-control" id="startTime" name="start_time" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="endTime" class="form-label small">End Time</label>
+                                <input type="datetime-local" class="form-control" id="endTime" name="end_time" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100"><i class="fas fa-calendar-plus me-2"></i>Create TimeSlot</button>
                         </form>
                     </div>
                 </div>
                 {% endif %}
 
-                <!-- Quick Stats -->
-                <div class="bg-white shadow rounded-lg">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-800">Moderation Guide</h2>
-                    </div>
-                    <div class="p-6">
-                        <div class="space-y-4 text-sm text-gray-600">
-                            <div class="flex items-start space-x-3">
-                                <div class="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    <i class="fas fa-check text-xs"></i>
-                                </div>
-                                <div>
-                                    <p class="font-medium text-gray-900">Approve</p>
-                                    <p>Product meets all requirements and can proceed to clearance sale</p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-start space-x-3">
-                                <div class="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    <i class="fas fa-times text-xs"></i>
-                                </div>
-                                <div>
-                                    <p class="font-medium text-gray-900">Reject</p>
-                                    <p>Product doesn't meet requirements but can be resubmitted</p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-start space-x-3">
-                                <div class="w-6 h-6 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    <i class="fas fa-trash text-xs"></i>
-                                </div>
-                                <div>
-                                    <p class="font-medium text-gray-900">Remove</p>
-                                    <p>Remove product from consideration entirely</p>
-                                </div>
+                <!-- Moderation Guide -->
+                <div class="card shadow border-0">
+                    <div class="card-header bg-transparent fw-bold">Moderation Guide</div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-start mb-3">
+                            <i class="fas fa-check-circle text-success fs-5 me-3 mt-1"></i>
+                            <div>
+                                <strong>Approve</strong>
+                                <p class="text-muted small mb-0">Product meets all requirements and can proceed to clearance sale.</p>
                             </div>
                         </div>
+                        <div class="d-flex align-items-start mb-3">
+                            <i class="fas fa-times-circle text-danger fs-5 me-3 mt-1"></i>
+                            <div>
+                                <strong>Reject</strong>
+                                <p class="text-muted small mb-0">Product doesn't meet requirements but can be resubmitted after changes.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-trash-alt text-secondary fs-5 me-3 mt-1"></i>
+                            <div>
+                                <strong>Remove</strong>
+                                <p class="text-muted small mb-0">Permanently remove product from consideration.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Logs Section -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card shadow border-0">
+                    <div class="card-header bg-transparent fw-bold d-flex align-items-center">
+                        Activity Logs
+                        <span class="badge bg-primary ms-2">{{ logs.paginator.count }}</span>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if logs.object_list %}
+                        <div class="list-group list-group-flush">
+                            {% for log in logs.object_list %}
+                            <div class="list-group-item">
+                                <div class="d-flex align-items-start">
+                                    <div class="flex-shrink-0 me-3">
+                                        <div class="rounded-circle p-2 {% if log.action == 'approve' %}bg-success-subtle text-success{% elif log.action == 'reject' %}bg-danger-subtle text-danger{% elif log.action == 'remove' %}bg-secondary-subtle text-secondary{% else %}bg-primary-subtle text-primary{% endif %}">
+                                            <i class="fas {% if log.action == 'approve' %}fa-check{% elif log.action == 'reject' %}fa-times{% elif log.action == 'remove' %}fa-trash{% else %}fa-info{% endif %}"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <p class="mb-1">
+                                            <strong>{{ log.action|capfirst }}</strong>
+                                            {% if log.product_timeslot %}
+                                            <span class="fw-medium ms-1">{{ log.product_timeslot.product.name }}</span> in {{ log.product_timeslot.timeslot.name }}
+                                            {% endif %}
+                                        </p>
+                                        <p class="text-muted small mb-1">{{ log.comment|default:"No comment provided" }}</p>
+                                        <p class="text-muted small mb-0"><i class="fas fa-clock me-1"></i>{{ log.timestamp|timesince }} ago</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-history text-muted fs-1 mb-3"></i>
+                            <h5>No Activity</h5>
+                            <p class="text-muted">No recent moderation actions.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <!-- Logs Pagination -->
+                    <div class="card-footer bg-transparent">
+                        <nav>
+                            <ul class="pagination justify-content-center mb-0">
+                                {% if logs.has_previous %}
+                                <li class="page-item"><a class="page-link" href="?logs_page=1&pending_page={{ pending_pts.number }}&timeslot_page={{ timeslots.number }}">First</a></li>
+                                <li class="page-item"><a class="page-link" href="?logs_page={{ logs.previous_page_number }}&pending_page={{ pending_pts.number }}&timeslot_page={{ timeslots.number }}">Previous</a></li>
+                                {% endif %}
+                                <li class="page-item disabled"><a class="page-link">Page {{ logs.number }} of {{ logs.paginator.num_pages }}</a></li>
+                                {% if logs.has_next %}
+                                <li class="page-item"><a class="page-link" href="?logs_page={{ logs.next_page_number }}&pending_page={{ pending_pts.number }}&timeslot_page={{ timeslots.number }}">Next</a></li>
+                                <li class="page-item"><a class="page-link" href="?logs_page={{ logs.paginator.num_pages }}&pending_page={{ pending_pts.number }}&timeslot_page={{ timeslots.number }}">Last</a></li>
+                                {% endif %}
+                            </ul>
+                        </nav>
                     </div>
                 </div>
             </div>
@@ -380,35 +433,26 @@
     </div>
 
     <!-- Reject Modal -->
-    <div id="reject-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 p-4">
-        <div class="flex items-center justify-center min-h-screen">
-            <div class="bg-white rounded-lg w-full max-w-md">
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Reject Product</h3>
-                    <p class="text-sm text-gray-600 mb-4" id="reject-product-name"></p>
-                    
-                    <form method="POST" id="reject-form">
+    <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rejectModalLabel">Reject Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="rejectProductName" class="mb-3"></p>
+                    <form method="POST" id="rejectForm">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="reject">
-                        <input type="hidden" name="pts_id" id="reject-pts-id">
-                        
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Reason for Rejection</label>
-                            <textarea name="comment" rows="4" required
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                      placeholder="Please provide a reason for rejection..."></textarea>
+                        <input type="hidden" name="pts_id" id="rejectPtsId">
+                        <div class="mb-3">
+                            <label for="rejectComment" class="form-label">Reason for Rejection</label>
+                            <textarea class="form-control" id="rejectComment" name="comment" rows="3" placeholder="Provide a reason for rejection..."></textarea>
                         </div>
-                        
-                        <div class="flex justify-end space-x-3">
-                            <button type="button" 
-                                    onclick="closeRejectModal()"
-                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors">
-                                Cancel
-                            </button>
-                            <button type="submit"
-                                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors">
-                                Confirm Rejection
-                            </button>
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger">Confirm Rejection</button>
                         </div>
                     </form>
                 </div>
@@ -417,35 +461,26 @@
     </div>
 
     <!-- Remove Modal -->
-    <div id="remove-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 p-4">
-        <div class="flex items-center justify-center min-h-screen">
-            <div class="bg-white rounded-lg w-full max-w-md">
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Remove Product</h3>
-                    <p class="text-sm text-gray-600 mb-4" id="remove-product-name"></p>
-                    
-                    <form method="POST" id="remove-form">
+    <div class="modal fade" id="removeModal" tabindex="-1" aria-labelledby="removeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="removeModalLabel">Remove Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="removeProductName" class="mb-3"></p>
+                    <form method="POST" id="removeForm">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="remove">
-                        <input type="hidden" name="pts_id" id="remove-pts-id">
-                        
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Reason for Removal</label>
-                            <textarea name="comment" rows="4" required
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                      placeholder="Please provide a reason for removal..."></textarea>
+                        <input type="hidden" name="pts_id" id="removePtsId">
+                        <div class="mb-3">
+                            <label for="removeComment" class="form-label">Reason for Removal</label>
+                            <textarea class="form-control" id="removeComment" name="comment" rows="3" placeholder="Provide a reason for removal..."></textarea>
                         </div>
-                        
-                        <div class="flex justify-end space-x-3">
-                            <button type="button" 
-                                    onclick="closeRemoveModal()"
-                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors">
-                                Cancel
-                            </button>
-                            <button type="submit"
-                                    class="px-4 py-2 text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 rounded-md transition-colors">
-                                Confirm Removal
-                            </button>
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-dark">Confirm Removal</button>
                         </div>
                     </form>
                 </div>
@@ -453,49 +488,61 @@
         </div>
     </div>
 
+    <!-- Product Details Modal -->
+    <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productModalLabel">Product Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="productDetailsContent">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Product Details -->
+    {% for pts in pending_pts.object_list %}
+    <div id="details-{{ pts.id }}" class="d-none">
+        <h5 class="mb-3">{{ pts.product.name }}</h5>
+        <p class="mb-2"><strong>Merchant:</strong> {{ pts.product.merchant.business_name }}</p>
+        <p class="mb-2"><strong>Category:</strong> {{ pts.product.category.name }}</p>
+        <p class="mb-2"><strong>TimeSlot:</strong> {{ pts.timeslot.name }} ({{ pts.timeslot.start_time|date:"M d, Y H:i" }} - {{ pts.timeslot.end_time|date:"M d, Y H:i" }})</p>
+        <p class="mb-3"><strong>Description:</strong> {{ pts.product.description|default:"No description provided" }}</p>
+        <p class="mb-3">
+            <strong>Price:</strong> Kshs {{ pts.product.discounted_price|default:pts.product.original_price }}
+            {% if pts.product.discounted_price %}
+            <del>Kshs {{ pts.product.original_price }}</del> ({{ pts.product.percentage_discount }}% OFF)
+            {% endif %}
+        </p>
+        <div class="row g-2">
+            {% for image in pts.product.images.all %}
+            <div class="col-4">
+                <img src="{{ image.image.url }}" alt="Product Image" class="img-fluid rounded">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+
     <script>
-        // Reject Modal Functions
         function openRejectModal(ptsId, productName) {
-            document.getElementById('reject-pts-id').value = ptsId;
-            document.getElementById('reject-product-name').textContent = `You are about to reject: "${productName}"`;
-            document.getElementById('reject-modal').classList.remove('hidden');
+            document.getElementById('rejectPtsId').value = ptsId;
+            document.getElementById('rejectProductName').innerText = `You are about to reject: ${productName}`;
+            new bootstrap.Modal(document.getElementById('rejectModal')).show();
         }
 
-        function closeRejectModal() {
-            document.getElementById('reject-modal').classList.add('hidden');
-        }
-
-        // Remove Modal Functions
         function openRemoveModal(ptsId, productName) {
-            document.getElementById('remove-pts-id').value = ptsId;
-            document.getElementById('remove-product-name').textContent = `You are about to remove: "${productName}"`;
-            document.getElementById('remove-modal').classList.remove('hidden');
+            document.getElementById('removePtsId').value = ptsId;
+            document.getElementById('removeProductName').innerText = `You are about to remove: ${productName}`;
+            new bootstrap.Modal(document.getElementById('removeModal')).show();
         }
 
-        function closeRemoveModal() {
-            document.getElementById('remove-modal').classList.add('hidden');
-        }
-
-        // Close modals when clicking outside
-        document.addEventListener('click', function(event) {
-            if (event.target.classList.contains('fixed')) {
-                event.target.classList.add('hidden');
-            }
-        });
-
-        // Close modals with Escape key
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                document.querySelectorAll('.fixed').forEach(modal => {
-                    modal.classList.add('hidden');
-                });
-            }
-        });
-
-        // Product details modal (simplified version)
         function openProductModal(ptsId) {
-            // In a real implementation, this would show detailed product information
-            alert('Product details modal would open here for ID: ' + ptsId);
+            const detailsContent = document.getElementById(`details-${ptsId}`).innerHTML;
+            document.getElementById('productDetailsContent').innerHTML = detailsContent;
+            new bootstrap.Modal(document.getElementById('productModal')).show();
         }
     </script>
 </body>

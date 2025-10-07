@@ -15,7 +15,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-CSRF_TRUSTED_ORIGINS = ['https://013679ac446e.ngrok-free.app']
+CSRF_TRUSTED_ORIGINS = ['https://aad5a329b1a3.ngrok-free.app']
 
 
 AUTH_USER_MODEL = "core.User"

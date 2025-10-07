@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.core.exceptions import ValidationError
 
 
 
@@ -99,21 +100,17 @@ class ModeratorCategory(models.Model):
     def __str__(self):
         return f"{self.moderator.username} moderates {self.category.name}"
 
-
 # ------------------------------
 # TimeSlots for clearance sales
 # ------------------------------
-
-
-
 class TimeSlotManager(models.Manager):
     def auto_refresh_statuses(self):
         """Bulk update all timeslot statuses."""
         updated = 0
         for slot in self.all():
             old_status = slot.status
-            slot.update_status()
-            if slot.status != old_status:
+            new_status = slot.update_status()
+            if new_status != old_status:
                 updated += 1
         return updated
 
@@ -143,31 +140,41 @@ class TimeSlot(models.Model):
     def __str__(self):
         return f"{self.name} ({self.status})"
 
-    # -------------------------
-    # Clean lifecycle logic
-    # -------------------------
     def update_status(self):
         now = timezone.now()
         approved_count = self.products.filter(status="approved").count()
-        new_status = self.status  # start with current status
+        new_status = self.status
 
-        # CASE 1️⃣: Slot already ended
+        # CASE 1: Time ended (force end)
         if now >= self.end_time:
             new_status = "ended"
 
-        # CASE 2️⃣: Slot should go live (start_time reached and enough products)
+        # CASE 2: Start reached & enough approved products
         elif self.status == "waiting" and now >= self.start_time and approved_count >= 4:
             new_status = "live"
 
-        # CASE 3️⃣: Slot missed its start (not enough products)
+        # CASE 3: Start reached & NOT enough products
         elif self.status == "waiting" and now >= self.start_time and approved_count < 4:
             new_status = "ended"
+            # Auto-reject pending products
+            for pts in self.products.filter(status="pending"):
+                pts.status = "rejected"
+                pts.moderator_comment = (
+                    "Auto-rejected because timeslot expired before going live."
+                )
+                pts.save()
+                AuditLog.objects.create(
+                    moderator=None,
+                    product_timeslot=pts,
+                    action="reject",
+                    comment="Auto-rejected because timeslot expired before going live."
+                )
 
-        # CASE 4️⃣: Live slot that should end
+        # CASE 4: Live slot ended
         elif self.status == "live" and now >= self.end_time:
             new_status = "ended"
 
-        # Save only if changed
+        # ✅ Save only if changed
         if new_status != self.status:
             self.status = new_status
             self.save(update_fields=["status"])
@@ -179,30 +186,25 @@ class TimeSlot(models.Model):
 # Products
 # ------------------------------
 class Product(models.Model):
-    merchant = models.ForeignKey(MerchantProfile, on_delete=models.CASCADE, related_name="products")
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+    merchant = models.ForeignKey("MerchantProfile", on_delete=models.CASCADE, related_name="products")
+    category = models.ForeignKey("Category", on_delete=models.SET_NULL, null=True, blank=True)
     name = models.CharField(max_length=255)
     description = models.TextField()
     original_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     discounted_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     percentage_discount = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    stock_quantity = models.PositiveIntegerField(default=0)  # how many items available
+    stock_quantity = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def calculate_percentage_discount(self):
-        if self.discounted_price and self.original_price > 0:
+        if self.discounted_price and self.original_price and self.original_price > 0:
             discount = ((self.original_price - self.discounted_price) / self.original_price) * 100
             return round(discount, 2)
         return 0
 
     def save(self, *args, **kwargs):
-        # Auto-update percentage_discount before saving
         self.percentage_discount = self.calculate_percentage_discount()
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.name} ({self.percentage_discount}% off)"
-
 
     def __str__(self):
         return f"{self.name} ({self.merchant.business_name})"
@@ -219,8 +221,6 @@ class ProductImage(models.Model):
     def __str__(self):
         return f"Image for {self.product.name}"
 
-
-from django.core.exceptions import ValidationError
 
 # ------------------------------
 # Product-TimeSlot Relationship
@@ -245,16 +245,11 @@ class ProductTimeSlot(models.Model):
     def __str__(self):
         return f"{self.product.name} in {self.timeslot.name} ({self.status})"
 
-    # --------------------------
-    # Validation rules
-    # --------------------------
     def clean(self):
-        """Ensure only 'waiting' timeslots can accept new products."""
         if self.timeslot.status not in ["waiting"]:
             raise ValidationError("You can only add or modify products in 'waiting' timeslots.")
 
     def save(self, *args, **kwargs):
-        # Enforce clean() validation every time it’s saved
         self.full_clean()
         super().save(*args, **kwargs)
 
@@ -262,7 +257,6 @@ class ProductTimeSlot(models.Model):
     # Moderator actions
     # --------------------------
     def approve(self, moderator):
-        """Approve product for this timeslot"""
         self.status = "approved"
         self.moderator_comment = "Approved automatically."
         self.save()
@@ -274,7 +268,6 @@ class ProductTimeSlot(models.Model):
         )
 
     def reject(self, moderator, comment):
-        """Reject product with moderator's comment"""
         self.status = "rejected"
         self.moderator_comment = comment
         self.save()
@@ -286,7 +279,6 @@ class ProductTimeSlot(models.Model):
         )
 
     def remove(self, moderator, comment):
-        """Remove product from this timeslot with comment"""
         self.status = "removed"
         self.moderator_comment = comment
         self.save()
@@ -307,6 +299,7 @@ class AuditLog(models.Model):
         ("reject", "Rejected Product"),
         ("remove", "Removed Product"),
         ("create_slot", "Created TimeSlot"),
+        ("pending", "Pending Submission"),
     ]
 
     moderator = models.ForeignKey(
@@ -331,68 +324,55 @@ class AuditLog(models.Model):
             return f"{self.moderator} {self.action} {self.product_timeslot}"
         return f"{self.moderator} {self.action}"
 
-    # --------------------------
-    # History helpers
-    # --------------------------
     @classmethod
     def history_for_product(cls, product_id):
-        """Return all logs across timeslots for a product"""
         return cls.objects.filter(product_timeslot__product_id=product_id).order_by("-timestamp")
 
     @classmethod
     def history_for_timeslot(cls, timeslot_id):
-        """Return all logs for a specific timeslot"""
         return cls.objects.filter(product_timeslot__timeslot_id=timeslot_id).order_by("-timestamp")
 
 
-
-
 # ------------------------------
-# Signals for automatic audit logging
+# Signals
 # ------------------------------
 
 @receiver(post_save, sender=TimeSlot)
 def log_timeslot_creation(sender, instance, created, **kwargs):
-    """Log creation of new timeslots by moderators."""
     if created and instance.created_by:
         AuditLog.objects.create(
             moderator=instance.created_by,
             action="create_slot",
-            comment=f"Created timeslot '{instance.name}' from {instance.start_time} to {instance.end_time}"
+            comment=f"Created timeslot '{instance.name}' ({instance.start_time} → {instance.end_time})"
         )
 
 
 @receiver(post_save, sender=ProductTimeSlot)
 def log_status_change(sender, instance, created, **kwargs):
-    """
-    Ensure *every* status change on ProductTimeSlot is logged,
-    even if it's not triggered via .approve()/.reject()/.remove()
-    """
+    """Log *all* ProductTimeSlot changes cleanly, no duplicates."""
     if created:
-        # First time linking product to a slot
         AuditLog.objects.create(
-            moderator=None,  # none, since merchant initiated
+            moderator=None,
             product_timeslot=instance,
             action="pending",
-            comment="Product submitted and waiting moderation."
+            comment="Product submitted and awaiting moderation."
         )
-    else:
-        # If moderator_comment is present and status is not pending
-        if instance.status in ["approved", "rejected", "removed"]:
+    elif instance.status in ["approved", "rejected", "removed"]:
+        # Prevent duplicate logs for the same update
+        if not AuditLog.objects.filter(
+            product_timeslot=instance, action=instance.status, comment=instance.moderator_comment
+        ).exists():
             AuditLog.objects.create(
-                moderator=None,  # If you want the actual moderator, use signals differently
+                moderator=None,
                 product_timeslot=instance,
                 action=instance.status,
                 comment=instance.moderator_comment or f"Status set to {instance.status}"
             )
 
 
-# ------------------------------
-# Auto-activate or end timeslots dynamically
-# ------------------------------
 @receiver(post_save, sender=ProductTimeSlot)
 def auto_activate_timeslot(sender, instance, **kwargs):
-    """Update timeslot status automatically when product status changes."""
+    """Whenever a product status changes, ensure its timeslot updates properly."""
     instance.timeslot.update_status()
 
 

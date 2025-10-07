@@ -448,51 +448,75 @@ def create_merchant_profile(request):
     return render(request, "files/merchant/create_profile.html")
 
 
-# MODERATOR VIEWS ##################################################################################################@login_required
+# MODERATOR VIEWS ##################################################################################################
+
+@login_required
 @role_required("MODERATOR")
 def moderator_dashboard(request):
     moderator = request.user
 
-    # ✅ Categories assigned to this moderator
+    # ✅ Categories this moderator handles
     categories = Category.objects.filter(
         id__in=ModeratorCategory.objects.filter(moderator=moderator).values("category_id")
     )
 
-    # ✅ Products waiting moderation in slots (only in categories assigned to this mod)
-    pending_pts = ProductTimeSlot.objects.filter(
-        product__category__in=categories,
-        status="pending"
-    ).select_related("product", "timeslot", "product__merchant").prefetch_related("product__images")
+    # ✅ Products awaiting moderation (pending)
+    pending_pts = (
+        ProductTimeSlot.objects.filter(
+            product__category__in=categories,
+            status="pending"
+        )
+        .select_related("product", "timeslot", "product__merchant")
+        .prefetch_related("product__images")
+    )
 
-    # ✅ Allow creating slots only if moderator has TSM category
-    can_create_slot = categories.filter(name__iexact="TSM").exists()
+    # ✅ All timeslots created by this moderator
+    timeslots = (
+        TimeSlot.objects.filter(created_by=moderator)
+        .prefetch_related("products__product__images", "products__product__merchant")
+        .order_by("-start_time")
+    )
 
-    # ✅ Audit log for this moderator
+    # ✅ All product-timeslot relationships (for showing total moderated products)
+    moderated_pts = (
+        ProductTimeSlot.objects.filter(
+            timeslot__created_by=moderator
+        )
+        .select_related("product", "timeslot")
+        .order_by("-updated_at")
+    )
+
+    # ✅ Audit logs (what actions this moderator took)
     logs = AuditLog.objects.filter(moderator=moderator).order_by("-timestamp")
+
+    # ✅ Allow slot creation only if TSM category
+    can_create_slot = categories.filter(name__iexact="TSM").exists()
 
     # ----------------------
     # Pagination setup
     # ----------------------
     pending_page = request.GET.get("pending_page", 1)
     logs_page = request.GET.get("logs_page", 1)
+    timeslot_page = request.GET.get("timeslot_page", 1)
 
-    # ✅ Paginate pending reviews (10 per page)
-    pending_paginator = Paginator(pending_pts, 10)
-    try:
-        pending_pts_page = pending_paginator.page(pending_page)
-    except PageNotAnInteger:
-        pending_pts_page = pending_paginator.page(1)
-    except EmptyPage:
-        pending_pts_page = pending_paginator.page(pending_paginator.num_pages)
+    paginator_pending = Paginator(pending_pts, 5)
+    paginator_logs = Paginator(logs, 5)
+    paginator_timeslots = Paginator(timeslots, 5)
 
-    # ✅ Paginate logs (15 per page)
-    logs_paginator = Paginator(logs, 15)
     try:
-        logs_page_obj = logs_paginator.page(logs_page)
-    except PageNotAnInteger:
-        logs_page_obj = logs_paginator.page(1)
-    except EmptyPage:
-        logs_page_obj = logs_paginator.page(logs_paginator.num_pages)
+        pending_pts_page = paginator_pending.page(pending_page)
+    except (PageNotAnInteger, EmptyPage):
+        pending_pts_page = paginator_pending.page(1)
+
+    try:
+        logs_page_obj = paginator_logs.page(logs_page)
+    except (PageNotAnInteger, EmptyPage):
+        logs_page_obj = paginator_logs.page(1)
+
+    try:
+        timeslot_page_obj = paginator_timeslots.page(timeslot_page)
+    except (PageNotAnInteger, EmptyPage):
+        timeslot_page_obj = paginator_timeslots.page(1)
 
     # ----------------------
     # POST actions
@@ -500,12 +524,13 @@ def moderator_dashboard(request):
     if request.method == "POST":
         action = request.POST.get("action")
 
+        # Approve / Reject / Remove
         if action in ["approve", "reject", "remove"]:
             pts_id = request.POST.get("pts_id")
             comment = request.POST.get("comment", "")
             pts = get_object_or_404(ProductTimeSlot, id=pts_id)
 
-            # ✅ Only allow moderators of that category to moderate
+            # Authorization check
             if pts.product.category not in categories:
                 messages.error(request, "You are not allowed to moderate this category.")
                 return redirect("moderator_dashboard")
@@ -515,11 +540,12 @@ def moderator_dashboard(request):
                 messages.success(request, f"{pts.product.name} approved for {pts.timeslot.name}")
             elif action == "reject":
                 pts.reject(moderator, comment or "Rejected by moderator.")
-                messages.warning(request, f"{pts.product.name} rejected")
+                messages.warning(request, f"{pts.product.name} rejected.")
             elif action == "remove":
                 pts.remove(moderator, comment or "Removed by moderator.")
-                messages.error(request, f"{pts.product.name} removed")
+                messages.error(request, f"{pts.product.name} removed.")
 
+        # Create new TimeSlot
         elif action == "create_slot" and can_create_slot:
             try:
                 name = request.POST.get("name")
@@ -540,6 +566,14 @@ def moderator_dashboard(request):
         return redirect("moderator_dashboard")
 
     # ----------------------
+    # Dashboard summary metrics
+    # ----------------------
+    total_slots = timeslots.count()
+    live_slots = timeslots.filter(status="live").count()
+    ended_slots = timeslots.filter(status="ended").count()
+    total_products_moderated = moderated_pts.exclude(status="pending").count()
+
+    # ----------------------
     # Context for template
     # ----------------------
     context = {
@@ -547,5 +581,11 @@ def moderator_dashboard(request):
         "pending_pts": pending_pts_page,
         "can_create_slot": can_create_slot,
         "logs": logs_page_obj,
+        "timeslots": timeslot_page_obj,
+        "total_slots": total_slots,
+        "live_slots": live_slots,
+        "ended_slots": ended_slots,
+        "total_products_moderated": total_products_moderated,
     }
     return render(request, "files/moderator/office.html", context)
+
