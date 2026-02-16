@@ -9,6 +9,9 @@ from .decorators import role_required
 from django.utils import timezone
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from decimal import Decimal, InvalidOperation
+from django.db.models import Q, Count
+from django.db.models import Prefetch
+from urllib.parse import quote_plus
 
 
 User = get_user_model()
@@ -85,10 +88,6 @@ def logout_view(request):
     messages.success(request, "You have been logged out.")
     return redirect("login")
 
-
-# CUSTOMER VIEWS ###################################################################################################
-def index(request):
-    return render(request, "files/customer/index.html")
 
 
 # MERCHANT VIEWS ###################################################################################################
@@ -221,11 +220,6 @@ def merchant_dashboard(request):
 ###########################################################################
 # Merchant Products and Time slots Management
 ############################################################################
-from decimal import Decimal, InvalidOperation
-from django.db import transaction
-from django.utils import timezone
-from django.db.models import Q
-from django.shortcuts import get_object_or_404
 
 @login_required 
 @role_required("MERCHANT")
@@ -588,4 +582,100 @@ def moderator_dashboard(request):
         "total_products_moderated": total_products_moderated,
     }
     return render(request, "files/moderator/office.html", context)
+
+
+
+
+# Actual Marketplace View (for Customers to browse live products)#########################################################
+
+
+# CUSTOMER VIEWS ###################################################################################################
+
+def index(request):
+    now = timezone.now()
+
+    # ensure statuses are fresh
+    try:
+        TimeSlot.objects.auto_refresh_statuses()
+    except Exception:
+        pass
+
+    # Live ProductTimeSlots (approved products in live timeslots)
+    live_pts = ProductTimeSlot.objects.filter(
+        timeslot__status="live",
+        status="approved",
+        timeslot__start_time__lte=now,
+        timeslot__end_time__gte=now,
+    ).select_related("product__merchant", "timeslot").prefetch_related("product__images")
+
+    # Build queryset of distinct products for pagination
+    live_product_ids = live_pts.values_list("product_id", flat=True).distinct()
+    live_products_qs = Product.objects.filter(id__in=live_product_ids).prefetch_related("images", "merchant")
+
+    paginator = Paginator(live_products_qs.order_by("-created_at"), 12)
+    page_number = request.GET.get("page")
+    products_page = paginator.get_page(page_number)
+
+    # Upcoming slots that have at least one approved product (teaser)
+    upcoming_slots = (
+        TimeSlot.objects.filter(status="waiting", start_time__gt=now)
+        .annotate(approved_count=Count("products", filter=Q(products__status="approved")))
+        .filter(approved_count__gt=0)
+        .order_by("start_time")
+        .prefetch_related(
+            Prefetch(
+                "products",
+                queryset=ProductTimeSlot.objects.filter(status="approved").select_related("product").prefetch_related("product__images"),
+                to_attr="approved_products"
+            )
+        )
+    )
+
+    context = {
+        "products_page": products_page,
+        "upcoming_slots": upcoming_slots,
+        "now": now,
+    }
+    return render(request, "files/customer/index.html", context)
+
+
+def product_detail(request, product_id):
+    product = Product.objects.prefetch_related("images").select_related("merchant").get(id=product_id)
+
+    now = timezone.now()
+
+    # Is this product approved in any live timeslot?
+    live_pts = product.timeslots.filter(
+        status="approved",
+        timeslot__status="live",
+        timeslot__start_time__lte=now,
+        timeslot__end_time__gte=now,
+    ).select_related("timeslot").first()
+
+    # Preview slot (approved + waiting) if any (no contact)
+    upcoming_pts = product.timeslots.filter(
+        status="approved",
+        timeslot__status="waiting",
+        timeslot__start_time__gt=now
+    ).select_related("timeslot").first()
+
+    live_contact = False
+    whatsapp_url = None
+    if live_pts:
+        live_contact = True
+        timeslot = live_pts.timeslot
+        # Normalize WH number and prefill message
+        raw = product.merchant.whatsapp_number or ""
+        normalized = raw.strip().lstrip("+").replace(" ", "")
+        msg = f"Hi, I'm interested in '{product.name}' from the '{timeslot.name}' clearance. Is it still available?"
+        whatsapp_url = f"https://wa.me/{normalized}?text={quote_plus(msg)}"
+
+    context = {
+        "product": product,
+        "images": product.images.all(),
+        "live_contact": live_contact,
+        "whatsapp_url": whatsapp_url,
+        "upcoming_preview": upcoming_pts,  # may be None
+    }
+    return render(request, "files/customer/product_detail.html", context)
 

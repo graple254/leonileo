@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product.name }} - Clearance Sales</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .image-gallery {
+            position: relative;
+            background: #f8f9fa;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .main-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            transition: opacity 0.3s ease;
+        }
+        .thumbnails {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+        .thumbnail {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border: 2px solid transparent;
+            border-radius: 5px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+        .thumbnail:hover, .thumbnail.active {
+            opacity: 1;
+            border-color: #007bff;
+        }
+        .image-loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        .status-badge {
+            font-size: 0.9rem;
+        }
+        .merchant-card {
+            border-left: 4px solid #28a745;
+        }
+        .action-btn {
+            transition: all 0.3s ease;
+        }
+        .action-btn:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="{% url 'index' %}">
+                <i class="bi bi-arrow-left me-2"></i>
+                Back to Sales
+            </a>
+        </div>
+    </nav>
+
+    <!-- Product Details -->
+    <div class="container py-4">
+        <div class="row">
+            <!-- Image Gallery -->
+            <div class="col-lg-6 mb-4">
+                <div class="image-gallery">
+                    <div class="image-loader"></div>
+                    {% with images.first as main_image %}
+                    <img id="mainImage" 
+                         src="{{ main_image.image.url }}" 
+                         alt="{{ product.name }}" 
+                         class="main-image"
+                         style="opacity: 0;"
+                         onload="this.style.opacity='1'; document.querySelector('.image-loader').style.display='none';"
+                         onerror="this.style.display='none'; document.querySelector('.image-loader').style.display='none'; document.getElementById('imageError').style.display='block';">
+                    {% endwith %}
+                    
+                    <div id="imageError" class="text-center py-5" style="display: none;">
+                        <i class="bi bi-image text-muted display-1"></i>
+                        <p class="text-muted mt-2">Image not available</p>
+                    </div>
+                </div>
+
+                {% if images|length > 1 %}
+                <div class="thumbnails">
+                    {% for image in images %}
+                    <img src="{{ image.image.url }}" 
+                         alt="{{ product.name }} - Image {{ forloop.counter }}"
+                         class="thumbnail {% if forloop.first %}active{% endif %}"
+                         onclick="changeMainImage('{{ image.image.url }}', this)"
+                         onerror="this.style.display='none';">
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Product Info -->
+            <div class="col-lg-6">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h1 class="h2">{{ product.name }}</h1>
+                    <span class="h3 text-primary fw-bold">${{ product.price }}</span>
+                </div>
+
+                <!-- Status Badges -->
+                <div class="mb-4">
+                    {% if live_contact %}
+                    <span class="badge bg-success status-badge me-2">
+                        <i class="bi bi-broadcast me-1"></i>LIVE NOW
+                    </span>
+                    {% endif %}
+                    
+                    {% if upcoming_preview %}
+                    <span class="badge bg-warning text-dark status-badge me-2">
+                        <i class="bi bi-clock me-1"></i>UPCOMING
+                    </span>
+                    {% endif %}
+                    
+                    {% if not live_contact and not upcoming_preview %}
+                    <span class="badge bg-secondary status-badge">
+                        <i class="bi bi-eye me-1"></i>PREVIEW
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Product Description -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-info-circle me-2"></i>Description
+                        </h5>
+                        <p class="card-text">{{ product.description|linebreaks }}</p>
+                    </div>
+                </div>
+
+                <!-- Merchant Info -->
+                <div class="card merchant-card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-shop me-2"></i>Seller Information
+                        </h5>
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ product.merchant.business_name }}</h6>
+                                <p class="text-muted small mb-0">
+                                    <i class="bi bi-geo-alt me-1"></i>
+                                    {{ product.merchant.address }}
+                                </p>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle me-1"></i>Verified
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-grid gap-2 d-md-flex">
+                    {% if live_contact and whatsapp_url %}
+                    <a href="{{ whatsapp_url }}" 
+                       target="_blank" 
+                       class="btn btn-success btn-lg action-btn flex-fill">
+                        <i class="bi bi-whatsapp me-2"></i>
+                        Contact via WhatsApp
+                    </a>
+                    {% elif upcoming_preview %}
+                    <button class="btn btn-warning btn-lg flex-fill" disabled>
+                        <i class="bi bi-clock me-2"></i>
+                        Available {{ upcoming_preview.timeslot.start_time|date:"M j" }}
+                    </button>
+                    {% else %}
+                    <button class="btn btn-secondary btn-lg flex-fill" disabled>
+                        <i class="bi bi-eye me-2"></i>
+                        Preview Only
+                    </button>
+                    {% endif %}
+                    
+                    <a href="{% url 'index' %}" class="btn btn-outline-primary btn-lg">
+                        <i class="bi bi-grid me-2"></i>
+                        Browse More
+                    </a>
+                </div>
+
+                <!-- Additional Info -->
+                <div class="mt-4 pt-3 border-top">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <i class="bi bi-truck text-primary d-block h4"></i>
+                            <small class="text-muted">Fast Delivery</small>
+                        </div>
+                        <div class="col-4">
+                            <i class="bi bi-shield-check text-primary d-block h4"></i>
+                            <small class="text-muted">Secure Payment</small>
+                        </div>
+                        <div class="col-4">
+                            <i class="bi bi-arrow-clockwise text-primary d-block h4"></i>
+                            <small class="text-muted">Easy Returns</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Info Section -->
+    {% if live_contact and live_pts %}
+    <div class="bg-light py-4 mt-4">
+        <div class="container">
+            <div class="alert alert-info mb-0">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-info-circle-fill me-3 h4 mb-0"></i>
+                    <div>
+                        <h6 class="alert-heading mb-1">This product is part of "{{ live_pts.timeslot.name }}"</h6>
+                        <p class="mb-0">Sale ends {{ live_pts.timeslot.end_time|date:"M j, Y g:i A" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2024 Clearance Sales. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function changeMainImage(src, element) {
+            const mainImage = document.getElementById('mainImage');
+            const loader = document.querySelector('.image-loader');
+            const errorDiv = document.getElementById('imageError');
+            
+            // Show loader
+            loader.style.display = 'block';
+            mainImage.style.opacity = '0';
+            errorDiv.style.display = 'none';
+            
+            // Update active thumbnail
+            document.querySelectorAll('.thumbnail').forEach(thumb => {
+                thumb.classList.remove('active');
+            });
+            element.classList.add('active');
+            
+            // Load new image
+            mainImage.onload = function() {
+                this.style.opacity = '1';
+                loader.style.display = 'none';
+            };
+            
+            mainImage.onerror = function() {
+                this.style.display = 'none';
+                loader.style.display = 'none';
+                errorDiv.style.display = 'block';
+            };
+            
+            mainImage.src = src;
+        }
+
+        // Preload all images for better gallery experience
+        document.addEventListener('DOMContentLoaded', function() {
+            const thumbnails = document.querySelectorAll('.thumbnail');
+            thumbnails.forEach(thumb => {
+                const img = new Image();
+                img.src = thumb.src;
+            });
+        });
+    </script>
+</body>
+</html>

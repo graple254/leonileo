@@ -15,7 +15,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-CSRF_TRUSTED_ORIGINS = ['https://aad5a329b1a3.ngrok-free.app']
+CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app', 'http://localhost:8000', 'yourusername.pythonanywhere.com']
 
 
 AUTH_USER_MODEL = "core.User"
@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'core.middleware.VisitorTrackingMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -114,6 +115,9 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
+
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 
 STATIC_URL = "static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")

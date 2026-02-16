@@ -9,6 +9,7 @@ urlpatterns = [
 
     # Customer
     path("", index, name="index"),
+    path("product/<int:product_id>/", product_detail, name="product_detail"),
 
     # Merchant URLs
     path("merchant/dashboard/", merchant_dashboard, name="merchant_dashboard"),
