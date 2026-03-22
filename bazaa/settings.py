@@ -17,7 +17,7 @@ ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app', 'http://localhost:8000', 'https://victorokoth.pythonanywhere.com']
 
-SITE_BASE_URL = 'https://victorokoth.pythonanywhere.com'
+SITE_BASE_URL = 'https://bazaa-wk1n.onrender.com'
 AUTH_USER_MODEL = "core.User"
 
 LIPANA_SECRET_KEY = "lip_sk_live_3fd8afb8921f1afd07ec324272bddc2d46e9be96196f68437fba92c5bb537c2b"

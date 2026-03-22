@@ -25,7 +25,7 @@ def create_payment_link(product, request=None, amount=None):
     if request is not None:
         base_url = request.build_absolute_uri('/').rstrip('/')
     else:
-        base_url = getattr(settings, 'SITE_BASE_URL', 'https://victorokoth.pythonanywhere.com')
+        base_url = getattr(settings, 'SITE_BASE_URL', 'https://bazaa-wk1n.onrender.com')
 
     success_url = f"{base_url}/payment/success/"
 
