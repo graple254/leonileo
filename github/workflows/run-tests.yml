@@ -26,4 +26,4 @@ jobs:
         env:
           DJANGO_SETTINGS_MODULE: bazaa.settings
         run: |
-          python manage.py test core.test
+          python manage.py test core
