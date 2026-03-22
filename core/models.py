@@ -193,6 +193,7 @@ class Product(models.Model):
     original_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     discounted_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     percentage_discount = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    payment_link = models.URLField(blank=True, null=True)
     stock_quantity = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -15,7 +15,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app', 'http://localhost:8000', 'yourusername.pythonanywhere.com']
+CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app', 'http://localhost:8000', 'https://victorokoth.pythonanywhere.com']
 
 
 AUTH_USER_MODEL = "core.User"
