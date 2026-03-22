@@ -2,8 +2,10 @@ asgiref==3.9.1
 certifi==2025.8.3
 charset-normalizer==3.4.3
 Django==5.2.6
+gunicorn==25.1.0
 idna==3.10
 lipana==1.0.1
+packaging==26.0
 pillow==11.3.0
 python-dateutil==2.9.0.post0
 requests==2.32.5
