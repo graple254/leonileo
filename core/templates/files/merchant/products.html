@@ -196,6 +196,7 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Original Price</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discounted Price</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">In Stock</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Link</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -221,6 +222,16 @@
                                         {% else %}bg-red-100 text-red-800{% endif %}">
                                             {{ product.stock_quantity }}
                                         </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        {% if product.payment_link %}
+                                        <button onclick="copyLink('{{ product.payment_link|escapejs }}', this)"
+                                            class="inline-flex items-center gap-1 bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 px-2 py-1 rounded-md text-xs font-medium transition-colors">
+                                            <i class="fas fa-copy"></i> Copy Link
+                                        </button>
+                                        {% else %}
+                                        <span class="text-xs text-gray-400 italic">No link yet</span>
+                                        {% endif %}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div class="flex space-x-2">
@@ -279,6 +290,47 @@
                                                             <p class="font-semibold">In Stock: 
                                                                 <span class="text-gray-600">{{ product.stock_quantity }}</span>
                                                             </p>
+                                                                                                                        <div class="border-t pt-3 mt-3">
+                                                                <p class="font-semibold text-sm mb-2">M-Pesa Payment Link</p>
+
+                                                                {% if product.payment_link %}
+                                                                <div class="flex items-center gap-2 mb-3">
+                                                                    <a href="{{ product.payment_link }}" target="_blank"
+                                                                        class="text-xs text-blue-600 underline truncate max-w-[200px]" title="{{ product.payment_link }}">
+                                                                        {{ product.payment_link|truncatechars:40 }}
+                                                                    </a>
+                                                                    <button onclick="copyLink('{{ product.payment_link|escapejs }}', this)"
+                                                                        class="flex-shrink-0 inline-flex items-center gap-1 bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 px-2 py-1 rounded text-xs font-medium">
+                                                                        <i class="fas fa-copy"></i> Copy
+                                                                    </button>
+                                                                </div>
+                                                                {% else %}
+                                                                <p class="text-xs text-gray-400 italic mb-3">No payment link generated yet.</p>
+                                                                {% endif %}
+
+                                                                <!-- Regenerate / Generate Form -->
+                                                                <form method="POST" action="{% url 'generate_payment_link' product.id %}">
+                                                                    {% csrf_token %}
+                                                                    <div class="flex items-center gap-2">
+                                                                        <div class="relative flex-1">
+                                                                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">Kshs</span>
+                                                                            <input type="number" name="custom_amount" placeholder="Custom amount (optional)" min="1" step="1"
+                                                                                class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                                                                        </div>
+                                                                        <button type="submit"
+                                                                            class="flex-shrink-0 inline-flex items-center gap-1 bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-2 rounded-md text-xs font-semibold transition-colors">
+                                                                            <i class="fas fa-bolt"></i>
+                                                                            {% if product.payment_link %}Regenerate{% else %}Generate{% endif %}
+                                                                        </button>
+                                                                    </div>
+                                                                    <p class="text-xs text-gray-400 mt-1">
+                                                                        Leave blank to use discounted price (Kshs {{ product.discounted_price|default:product.original_price }}).
+                                                                        Enter a custom amount to include delivery fees etc.
+                                                                    </p>
+                                                                </form>
+                                                            </div>
+
+
                                                         </div>
                                                     </div>
                                                 </div>
@@ -403,54 +455,78 @@
                     </div>
                 </div>
 
-                <!-- Add this JavaScript for modal functionality -->
-                <script>
-                    function showModal(modalId) {
-                        document.getElementById(modalId).classList.remove('hidden');
-                        document.body.style.overflow = 'hidden';
+            <script>
+                // ── Modal helpers ──────────────────────────────────────────
+                function showModal(modalId) {
+                    document.getElementById(modalId).classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                }
+                function hideModal(modalId) {
+                    document.getElementById(modalId).classList.add('hidden');
+                    document.body.style.overflow = 'auto';
+                }
+                window.onclick = function(event) {
+                    if (event.target.classList.contains('fixed')) {
+                        hideModal(event.target.id);
                     }
+                }
 
-                    function hideModal(modalId) {
-                        document.getElementById(modalId).classList.add('hidden');
-                        document.body.style.overflow = 'auto';
-                    }
+                // ── Product data map (pre-filled from Django) ──────────────
+                const productData = {
+                    {% for product in products_page %}
+                    "{{ product.id }}": {
+                        name:             "{{ product.name|escapejs }}",
+                        description:      "{{ product.description|escapejs }}",
+                        category:         "{{ product.category.id|default:'' }}",
+                        original_price:   "{{ product.original_price|default:'' }}",
+                        discounted_price: "{{ product.discounted_price|default:'' }}",
+                        stock_quantity:   "{{ product.stock_quantity }}"
+                    },
+                    {% endfor %}
+                };
 
-                    // Close modal when clicking outside
-                    window.onclick = function(event) {
-                        if (event.target.classList.contains('fixed')) {
-                            hideModal(event.target.id);
+                // ── Edit modal ─────────────────────────────────────────────
+                function openEditModal(productId) {
+                    const data = productData[String(productId)];
+                    if (data) {
+                        document.getElementById('edit-product-id').value       = productId;
+                        document.getElementById('edit-name').value             = data.name;
+                        document.getElementById('edit-description').value      = data.description;
+                        document.getElementById('edit-original-price').value   = data.original_price;
+                        document.getElementById('edit-discounted-price').value = data.discounted_price;
+                        document.getElementById('edit-stock-quantity').value   = data.stock_quantity;
+                        // Set category dropdown
+                        const catSelect = document.getElementById('edit-category');
+                        for (let opt of catSelect.options) {
+                            opt.selected = (opt.value === String(data.category));
                         }
                     }
+                    document.getElementById('edit-product-form').action = "{% url 'merchant_products' %}";
+                    showModal('edit-product-modal');
+                }
 
-                    // Edit product functionality
-                    function openEditModal(productId) {
-                        // In a real implementation, you would fetch the product data via AJAX
-                        // For now, we'll set up the form and show the modal
-                        document.getElementById('edit-product-id').value = productId;
-                        
-                        // You would populate the form fields with current product data here
-                        // This would typically be done via an AJAX call to get product details
-                        // For now, we'll just show the modal
-                        showModal('edit-product-modal');
-                    }
+                // ── Delete modal ───────────────────────────────────────────
+                function confirmDelete(productId, productName) {
+                    document.getElementById('delete-product-id').value = productId;
+                    document.getElementById('delete-product-name').textContent = productName;
+                    showModal('delete-confirm-modal');
+                }
 
-                    // Delete product functionality
-                    function confirmDelete(productId, productName) {
-                        document.getElementById('delete-product-id').value = productId;
-                        document.getElementById('delete-product-name').textContent = productName;
-                        showModal('delete-confirm-modal');
-                    }
-
-                    // Form submission handlers
-                    document.getElementById('edit-product-form').addEventListener('submit', function(e) {
-                        // Add any client-side validation here
-                        console.log('Submitting edit form for product:', document.getElementById('edit-product-id').value);
+                // ── Copy payment link ──────────────────────────────────────
+                function copyLink(url, btn) {
+                    navigator.clipboard.writeText(url).then(() => {
+                        const original = btn.innerHTML;
+                        btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                        btn.classList.replace('text-green-700', 'text-white');
+                        btn.classList.replace('bg-green-50', 'bg-green-600');
+                        setTimeout(() => {
+                            btn.innerHTML = original;
+                            btn.classList.replace('text-white', 'text-green-700');
+                            btn.classList.replace('bg-green-600', 'bg-green-50');
+                        }, 2000);
                     });
-
-                    document.getElementById('delete-product-form').addEventListener('submit', function(e) {
-                        console.log('Submitting delete form for product:', document.getElementById('delete-product-id').value);
-                    });
-                </script>
+                }
+            </script>
 
                 <!-- Product Pagination -->
                 <div class="mt-4 flex justify-between items-center">
@@ -939,6 +1015,19 @@
             </div>
 
             <script>
+                function copyLink(url, btn) {
+                    navigator.clipboard.writeText(url).then(() => {
+                        const original = btn.innerHTML;
+                        btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                        btn.classList.replace('text-green-700', 'text-white');
+                        btn.classList.replace('bg-green-50', 'bg-green-600');
+                        setTimeout(() => {
+                            btn.innerHTML = original;
+                            btn.classList.replace('text-white', 'text-green-700');
+                            btn.classList.replace('bg-green-600', 'bg-green-50');
+                        }, 2000);
+                    });
+                }
                 function openLogModal(modalId) {
                     document.getElementById(modalId).classList.remove('hidden');
                 }

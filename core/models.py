@@ -183,7 +183,8 @@ class TimeSlot(models.Model):
 
 
 # ------------------------------
-# Products
+# Products : lip_sk_test_c445bbd1185aec756f193e5eee9d52e581bf77c99aa71a17a59a831decc4002a
+# lip_pk_test_fc77983c7944ed1296e104ed1b72ebf52a79c250485bc72ebd1755e20a0ad296
 # ------------------------------
 class Product(models.Model):
     merchant = models.ForeignKey("MerchantProfile", on_delete=models.CASCADE, related_name="products")

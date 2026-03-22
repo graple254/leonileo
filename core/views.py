@@ -217,9 +217,17 @@ def merchant_dashboard(request):
     }
     return render(request, "files/merchant/dashboard.html", context)
 
+
+# Payment Success View (after Lipana redirects back) ###################################################################################################
+
+def payment_success(request):
+    return render(request, "files/payment/success.html")
+
+
 ###########################################################################
 # Merchant Products and Time slots Management
 ############################################################################
+
 
 @login_required 
 @role_required("MERCHANT")
@@ -253,7 +261,17 @@ def merchant_products(request):
                     for img in images:
                         ProductImage.objects.create(product=product, image=img)
 
+                    # Auto-generate payment link
+# Auto-generate payment link after product creation
+                    try:
+                        from .lipana_service import create_payment_link
+                        product.payment_link = create_payment_link(product, request=request)
+                        product.save(update_fields=["payment_link"])
+                    except Exception as e:
+                        messages.warning(request, f"Product saved, but payment link failed: {e}")
+
                     messages.success(request, "Product added successfully!")
+
             except Exception as e:
                 messages.error(request, f"Error adding product: {e}")
             return redirect("merchant_products")
@@ -339,6 +357,31 @@ def merchant_products(request):
                 messages.error(request, f"Error deleting product: {e}")
             return redirect("merchant_products")
 
+        # 5️⃣ Edit Product
+        elif action == "edit_product":
+            try:
+                with transaction.atomic():
+                    product = get_object_or_404(Product, id=request.POST.get("product_id"), merchant=merchant_profile)
+                    product.name = request.POST.get("name")
+                    product.description = request.POST.get("description")
+                    product.category_id = int(request.POST.get("category")) if request.POST.get("category") else None
+                    product.original_price = Decimal(request.POST.get("original_price")) if request.POST.get("original_price") else None
+                    product.discounted_price = Decimal(request.POST.get("discounted_price")) if request.POST.get("discounted_price") else None
+                    product.stock_quantity = int(request.POST.get("stock_quantity") or 0)
+                    product.save()
+
+                    # Regenerate payment link with new discounted price
+                    try:
+                        from .lipana_service import create_payment_link
+                        product.payment_link = create_payment_link(product, request=request)
+                        product.save(update_fields=["payment_link"])
+                    except Exception as e:
+                        messages.warning(request, f"Product updated but payment link failed: {e}")
+
+                    messages.success(request, f"'{product.name}' updated successfully!")
+            except Exception as e:
+                messages.error(request, f"Error updating product: {e}")
+            return redirect("merchant_products")     
     # ----------------------
     # GET: Dashboard Data
     # ----------------------
@@ -410,6 +453,30 @@ def merchant_products(request):
     return render(request, "files/merchant/products.html", context)
 
 
+
+@login_required
+@role_required("MERCHANT")
+def generate_payment_link(request, product_id):
+    """
+    Regenerate a payment link for a product.
+    Allows merchant to override the amount (e.g. to include delivery fees).
+    """
+    merchant_profile = request.user.merchant_profile
+    product = get_object_or_404(Product, id=product_id, merchant=merchant_profile)
+
+    if request.method == "POST":
+        from .lipana_service import create_payment_link
+        custom_amount = request.POST.get("custom_amount")
+
+        try:
+            amount = Decimal(custom_amount) if custom_amount else None
+            product.payment_link = create_payment_link(product, request=request, amount=amount)
+            product.save(update_fields=["payment_link"])
+            messages.success(request, f"Payment link regenerated successfully!")
+        except Exception as e:
+            messages.error(request, f"Failed to generate payment link: {e}")
+
+    return redirect("merchant_products")
 
 
 
