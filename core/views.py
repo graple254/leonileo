@@ -62,7 +62,7 @@ def login_view(request):
         if user:
             if user.is_active:
                 login(request, user)
-                messages.success(request, f"Welcome back {user.username}!")
+                messages.success(request, f"Welcome {user.username}!")
 
                 # Redirect based on role
                 if user.role == "MERCHANT":
